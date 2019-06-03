@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import MDAnalysis as mda
-from Bio.PDB import PDBList
 
 
 class MGTools(object):
@@ -14,13 +13,6 @@ class MGTools(object):
     def init_table(self, filepath, filename, ressep):
         table = filepath/filename
         return table
-
-    @staticmethod
-    def get_pdbStruc(pdbid):
-        pdbl = PDBList()
-        pdbfile = pdbl.retrieve_pdb_file(pdbid, pdir='PDB')
-        return pdbfile
-
 
     def sepres(self):
         tmp = self.table[self.table["segidI"] == self.table["segidJ"]]
@@ -43,9 +35,10 @@ class MGTools(object):
         tab_std = tab_sum.std(axis=1)
         return tab_sum, tab_mean, tab_std, tab_var
 
-    @staticmethod
-    def csm_mat(tab):
+    def csm_mat(self):
         """Returns symmetric diagonally dominant residue-residue coupling strength matrix (CSM)"""
+
+        _, tab, _, _ = self.sum_mean()
         try:
             tab.ndim == 1
         except TypeError:
@@ -66,7 +59,7 @@ class MGTools(object):
         so that the mean of its components is non-negative.
 
         :Example:
-           >>> eigenVectors, eigenValues = eigenVect(M)
+         eigenVectors, eigenValues = eigenVect(M)
 
         """
         eigenValues, eigenVectors = np.linalg.eigh(M)
@@ -209,20 +202,4 @@ class MGTools(object):
                 if n < 0.0:
                     nres.append(m + 1)
             return sres, np.sort(np.intersect1d(pres, sres)), np.sort(np.intersect1d(nres, sres))
-
-    def map_aa(self, aa2map, aa=False, aanum=True, contno=False):
-        aa_need = []
-        if aanum is True:
-            aaDict = dict(zip(range(1, 225), self.pdbno))
-            for aa in aa2map:
-                aa_need.append(aaDict[aa])
-        if aa is True:
-            aaDict = dict(zip(range(1, 225), self.pdbaa))
-            for aa in aa2map:
-                aa_need.append(aaDict[aa])
-        if contno is True:
-            aaDict = dict(zip(self.pdbno, range(1, 225)))
-            for aa in aa2map:
-                aa_need.append(aaDict[aa])
-        return aa_need
 
