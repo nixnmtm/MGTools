@@ -2,13 +2,17 @@ import MDAnalysis as mda
 from Bio.PDB import PDBList
 import os
 import urllib.request
+import logging
 
 
 class ProTools(object):
 
-    def __init__(self, pdbid):
-        self.pdbid = pdbid
+    def __init__(self, pdbid=None):
         self.dir_name = "./PDB/"
+        if pdbid is None:
+            logging.error("No pdbid provided")
+            exit(1)
+        self.pdbid = pdbid
         self.filename = self.pdbid + ".pdb"
         self.filepath = os.path.join(self.dir_name, self.filename)
         if not os.path.isfile(self.filepath):
@@ -16,15 +20,15 @@ class ProTools(object):
         self.univ = mda.Universe(self.filepath)
 
     def get_pdb(self, format=None):
+        """This gives pdb format"""
+        if format == "pdb" or format is None:
+            urllib.request.urlretrieve('https://files.rcsb.org/download/' + self.pdbid + '.pdb',
+                                       './PDB/' + self.pdbid + '.pdb')
+
         """This gives only the .cif format"""
         if format == "cif":
             pdbl = PDBList()
             pdbl.retrieve_pdb_file(self.pdbid, pdir='PDB')
-
-        """This gives pdb format"""
-        if format == "pdb":
-            urllib.request.urlretrieve('https://files.rcsb.org/download/' + self.pdbid + '.pdb',
-                                       './PDB/' + self.pdbid + '.pdb')
 
     def get_residNname(self, segid=None):
         """
@@ -45,4 +49,4 @@ class ProTools(object):
             _resids = self.univ.select_atoms("segid {} and not (resname HOH)".format(segid)).residues.resids
             _resnames = self.univ.select_atoms("segid {} and not (resname HOH)".format(segid)).residues.resnames
             protseg[segid] = dict(zip(_resids, _resnames))
-        return protseg
+        return protseg, _resids

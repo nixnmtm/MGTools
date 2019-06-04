@@ -2,9 +2,7 @@ import pandas as pd
 import numpy as np
 import MDAnalysis as mda
 import logging
-import ProTools
-
-pt = ProTools
+from ProTools import ProTools
 
 class MGTools(object):
 
@@ -15,13 +13,14 @@ class MGTools(object):
         self.table = table
         self.ressep = ressep
 
-    def split_sec_struc(self, psf=None, write=False, prefix=None):
+    def split_sec_struc(self, pdbid=None, write=False, prefix=None):
         # split table into three tables based on BB,BS and SS
         tmp = self.table.copy(deep=True)
-        if psf:
+        if pdbid is not None:
+            self.pt = ProTools(pdbid)
+            u = self.pt.univ
             # if atom names are not defined in the table
-            cg = mda.Universe(psf)
-            atomnames = cg.atoms.names()
+            atomnames = u.atoms.names
             atomids = np.unique(self.table["I"])
             atmname_atmid = dict(list(zip(atomids, atomnames)))
             tmp['I'].replace(atmname_atmid, inplace=True)
@@ -106,7 +105,7 @@ class MGTools(object):
                 eigenVectors[:, k] = np.sign(np.mean(eigenVectors[:, k])) * eigenVectors[:, k]
         return eigenValues, eigenVectors
 
-    def t_eigenVect(self, Nwind, start, end, Npos, SS=False):
+    def t_eigenVect(self, Nwind, Npos, SS=False):
         """ Return csm_mat, eigenVectors and eigenValues of all windows """
 
         stab, _, _ = self.sum_mean()
@@ -115,6 +114,8 @@ class MGTools(object):
         t_val = np.zeros((Nwind, Npos))
         for i in range(Nwind):
             time_mat = self.csm_mat(stab.iloc[:, i])
+            start = self.pt.get_residNname(segid=self.pt.univ.segments[0].segid)[1][0]
+            end = self.pt.get_residNname(segid=self.pt.univ.segments[0].segid)[1][-1]
             if SS:
                 time_mat = time_mat.reindex(np.arange(start, end)).T.reindex(np.arange(start, end)).replace(np.nan, 0.0)
             tval, tvec = self.eigenVect(time_mat)
@@ -126,21 +127,16 @@ class MGTools(object):
     @staticmethod
     def calc_pers(pers_mat, Npos, Nwind):
         # calculate persistance and leakage
-        mleak = []
         mpers = []
         for m in range(Npos):
             # print("mode %d" %m)
             ps = []
-            lk = []
             for w in range(Nwind):
                 max1 = sorted(np.square(pers_mat[w][m]))[-1]
                 pers = max1
-                leak = 1 - max1
-                lk.append(leak)
                 ps.append(pers)
-            mleak.append(np.asarray(lk).mean())
             mpers.append(np.asarray(ps).mean())
-        return mpers, mleak
+        return mpers
 
     @staticmethod
     def significant_residues(eigenVector, modes, cutoff):
@@ -156,8 +152,7 @@ class MGTools(object):
 
     @staticmethod
     def hitcov(sca_res, cs_res):
-        # hitrate and coverage rate with pySCA
-        # input pySCA residues and significant csm residues as an array
+        """hitrate rate with pySCA"""
         common = np.intersect1d(sca_res, cs_res).size
         hit = np.float(common) / np.float(cs_res.size)
         cov = np.float(common) / np.float(sca_res.size)
@@ -178,7 +173,7 @@ class MGTools(object):
                         res[m][1] = n
         return res
 
-    def pos_neg_res(self, mode, idx, U, pdb=False, wcut=0.1):
+    def pos_neg_res(self, mode, U, pdb=False, wcut=0.1):
         ''' modes: give exactly which eigenmode needed
             idx : is normal numbering
             pdb: if needed in pdb numbering
@@ -189,7 +184,9 @@ class MGTools(object):
         sres = list()
 
         if pdb:
-            for m, n, s in zip(self.pdbno, U[:, mode - 1], (U[:, mode - 1] * U[:, mode - 1])):
+            for m, n, s in zip(self.pt.get_residNname(self.pt.univ.segments[0].segid[1]),
+                               U[:, mode - 1],
+                               (U[:, mode - 1] * U[:, mode - 1])):
                 if s > wcut:
                     sres.append(m)
                 if n > 0.0:
@@ -198,7 +195,10 @@ class MGTools(object):
                     nres.append(m)
             return sres, np.sort(np.intersect1d(pres, sres)), np.sort(np.intersect1d(nres, sres))
         else:
-            for m, n, s in zip(idx, U[:, mode - 1], (U[:, mode - 1] * U[:, mode - 1])):
+            for m, n, s in zip(range(self.pt.get_residNname(segid=self.pt.univ.segments[0].segid)[1][0],
+                                     self.pt.get_residNname(segid=self.pt.univ.segments[0].segid)[1][-1]),
+                               U[:, mode - 1],
+                               (U[:, mode - 1] * U[:, mode - 1])):
                 if s > wcut:
                     sres.append(m + 1)
                 if n > 0.0:
