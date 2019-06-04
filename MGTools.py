@@ -105,10 +105,12 @@ class MGTools(object):
                 eigenVectors[:, k] = np.sign(np.mean(eigenVectors[:, k])) * eigenVectors[:, k]
         return eigenValues, eigenVectors
 
-    def t_eigenVect(self, Nwind, Npos, SS=False):
+    def t_eigenVect(self, SS=False):
         """ Return csm_mat, eigenVectors and eigenValues of all windows """
 
         stab, _, _ = self.sum_mean()
+        Nwind = stab.columns.size
+        Npos = stab.index.get_level_values('resI').unique().size
         t_mat = np.zeros((Nwind, Npos, Npos))
         t_vec = np.zeros((Nwind, Npos, Npos))
         t_val = np.zeros((Nwind, Npos))
