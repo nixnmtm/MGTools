@@ -7,28 +7,41 @@ import logging
 
 class ProTools(object):
 
-    def __init__(self, pdbid=None):
+    def __init__(self, pdbid):
         self.dir_name = "./PDB/"
+        self.pdbid = pdbid
         if pdbid is None:
             logging.error("No pdbid provided")
             exit(1)
-        self.pdbid = pdbid
-        self.filename = self.pdbid + ".pdb"
+        self.filename = pdbid + ".pdb"
         self.filepath = os.path.join(self.dir_name, self.filename)
         if not os.path.isfile(self.filepath):
-            self.get_pdb(format="pdb")
+            self.download_pdb(format="pdb")
         self.univ = mda.Universe(self.filepath)
 
-    def get_pdb(self, format=None):
+    def download_pdb(self, pdbid=None, format=None):
         """This gives pdb format"""
+        if pdbid is None:
+            pdbid = self.pdbid
+
         if format == "pdb" or format is None:
-            urllib.request.urlretrieve('https://files.rcsb.org/download/' + self.pdbid + '.pdb',
-                                       './PDB/' + self.pdbid + '.pdb')
+            urllib.request.urlretrieve('https://files.rcsb.org/download/' + pdbid + '.pdb',
+                                       './PDB/' + pdbid + '.pdb')
 
         """This gives only the .cif format"""
         if format == "cif":
             pdbl = PDBList()
-            pdbl.retrieve_pdb_file(self.pdbid, pdir='PDB')
+            pdbl.retrieve_pdb_file(pdbid, pdir='PDB')
+
+    def n_residues(self, segid=None):
+        if segid is None:
+            total_res = dict()
+            segs = self.univ.segments.segids
+            for seg in segs:
+                total_res[seg] = len(self.univ.select_atoms("segid {} and protein".format(seg)).residues.resids)
+            return total_res
+        else:
+            return len(self.univ.select_atoms("segid {} and protein".format(segid)).residues.resids)
 
     def get_residNname(self, segid=None):
         """

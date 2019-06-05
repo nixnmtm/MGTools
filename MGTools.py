@@ -1,24 +1,33 @@
 import pandas as pd
 import numpy as np
-import MDAnalysis as mda
-import logging
+import logging, os
 from ProTools import ProTools
+logging.basicConfig(level=logging.INFO)
 
-class MGTools(object):
 
-    def __init__(self, table, ressep):
+class MGTools(ProTools):
 
+    def __init__(self, pdbid, table_path, ressep):
+
+        logging.info("Loaded table: {}".format(os.path.basename(table_path)))
+        super().__init__(pdbid)  # super class can be called by this or "ProTools.__init__(self, pdbid)"
         self.grouping = ["segidI", "resI", "segidJ", "resJ"]
         self._index = ["segidI", "resI", "I", "segidJ", "resJ", "J"]
-        self.table = table
+        self.table = pd.read_csv(table_path, sep=' ')
         self.ressep = ressep
+        self.Npos = len(np.unique(self.table.resI))
+        pdbNpos = len(self.get_residNname(segid=self.univ.segments[0].segid)[1])
+        if pdbNpos != self.Npos:
+            logging.warning("Number of residues mismatch PBD: {} and table : {}".format(
+                len(self.get_residNname(segid=self.univ.segments[0].segid)[1]),
+                self.Npos
+            ))
 
-    def split_sec_struc(self, pdbid=None, write=False, prefix=None):
+    def split_sec_struc(self, write=False, prefix=None):
         # split table into three tables based on BB,BS and SS
         tmp = self.table.copy(deep=True)
-        if pdbid is not None:
-            self.pt = ProTools(pdbid)
-            u = self.pt.univ
+        if self.pdbid is not None:
+            u = self.univ
             # if atom names are not defined in the table
             atomnames = u.atoms.names
             atomids = np.unique(self.table["I"])
@@ -72,7 +81,6 @@ class MGTools(object):
 
     def csm_mat(self, tab):
         """Returns symmetric diagonally dominant residue-residue coupling strength matrix (CSM)"""
-
         try:
             tab.ndim == 1
         except TypeError:
@@ -107,19 +115,20 @@ class MGTools(object):
 
     def t_eigenVect(self, SS=False):
         """ Return csm_mat, eigenVectors and eigenValues of all windows """
-
         stab, _, _ = self.sum_mean()
         Nwind = stab.columns.size
         Npos = stab.index.get_level_values('resI').unique().size
+        start = stab.index.get_level_values("resI")[0]  # start residue number
+        end = stab.index.get_level_values("resI")[-1]  # end residue number
+        if SS:
+            Npos = end
         t_mat = np.zeros((Nwind, Npos, Npos))
         t_vec = np.zeros((Nwind, Npos, Npos))
         t_val = np.zeros((Nwind, Npos))
         for i in range(Nwind):
             time_mat = self.csm_mat(stab.iloc[:, i])
-            start = self.pt.get_residNname(segid=self.pt.univ.segments[0].segid)[1][0]
-            end = self.pt.get_residNname(segid=self.pt.univ.segments[0].segid)[1][-1]
             if SS:
-                time_mat = time_mat.reindex(np.arange(start, end)).T.reindex(np.arange(start, end)).replace(np.nan, 0.0)
+                time_mat = time_mat.reindex(range(start, end+1)).T.reindex(range(start, end+1)).replace(np.nan, 0.0)
             tval, tvec = self.eigenVect(time_mat)
             t_val[i, :] = tval
             t_vec[i, :, :] = tvec
@@ -186,7 +195,7 @@ class MGTools(object):
         sres = list()
 
         if pdb:
-            for m, n, s in zip(self.pt.get_residNname(self.pt.univ.segments[0].segid[1]),
+            for m, n, s in zip(self.get_residNname(self.univ.segments[0].segid[1]),
                                U[:, mode - 1],
                                (U[:, mode - 1] * U[:, mode - 1])):
                 if s > wcut:
@@ -197,8 +206,8 @@ class MGTools(object):
                     nres.append(m)
             return sres, np.sort(np.intersect1d(pres, sres)), np.sort(np.intersect1d(nres, sres))
         else:
-            for m, n, s in zip(range(self.pt.get_residNname(segid=self.pt.univ.segments[0].segid)[1][0],
-                                     self.pt.get_residNname(segid=self.pt.univ.segments[0].segid)[1][-1]),
+            for m, n, s in zip(range(self.get_residNname(segid=self.univ.segments[0].segid)[1][0],
+                                     self.get_residNname(segid=self.univ.segments[0].segid)[1][-1]),
                                U[:, mode - 1],
                                (U[:, mode - 1] * U[:, mode - 1])):
                 if s > wcut:
