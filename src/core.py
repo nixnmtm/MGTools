@@ -97,14 +97,11 @@ class BuildMG(object):
         except Exception as e:
             logging.warning("Error in splitting secondary structures --> {}".format(str(e)))
 
-    # TODO: Need to think about including ressep efficiently
-    # TODO: MGBuild is just upto building the symmetric matrix
-    # TODO: So Sum, Mean and CSM construction need to be included in this - think and do
     def sepres(self, table=None, ressep=None):
         """
-        Separate residues with given sequence separation number (ressep)
-
-        :return: DataFrame after residue separation
+        :param table: table for sequence separation
+        :param ressep: sequence separation to include (eg.  >= I,I + ressep), default is I,I+3)
+        :return: DataFrame after separation
         """
         if table is None:
             table = self.table
@@ -145,8 +142,15 @@ class BuildMG(object):
         tab_std = tab_sum.std(axis=1)
         return tab_sum, tab_mean, tab_std
 
-    def csm_mat(self, tab, segid=None, ressep=None):
-        """Returns symmetric diagonally dominant residue-residue coupling strength matrix (CSM)"""
+    def csm_mat(self, tab=None, segid=None, ressep=None):
+
+        """
+        Returns symmetric diagonally dominant residue-residue coupling strength matrix (CSM)
+
+        """
+        if tab is None:
+            _, tab, _ = self.sum_mean(segid)
+
         try:
             tab.ndim == 1
         except TypeError:
@@ -161,10 +165,10 @@ class BuildMG(object):
                                 columns=np.unique(_tab.reset_index().resI.values))
 
 
-mgt = BuildMG(filename="apo_pdz.txt", splitMgt="BB", ressep=1)
-bb, bs, ss = mgt.splitSS()
-print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
-print(mgt.table.shape[0])
-tab_sum, tab_mean, tab_std = mgt.sum_mean()
-print(tab_sum.head())
-
+mgt = BuildMG(filename="apo_pdz.txt", splitMgt="BS", ressep=2)
+# bb, bs, ss = mgt.splitSS()
+# print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
+# print(mgt.table.shape[0])
+# tab_sum, tab_mean, tab_std = mgt.sum_mean()
+# print(tab_sum.head())
+print(mgt.csm_mat())
