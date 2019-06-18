@@ -1,12 +1,12 @@
-# from MGTools import MGTools
-# import pandas as pd
-# import numpy as np
+from MGTools import MGTools
+import pandas as pd
+import numpy as np
 #
-# pdz3 = "C:/Users/nixon/Google Drive/coding/nw_notebooks/pdz3_kb_complete_apo_local_copy.txt"
+pdz3 = "C:/Users/nixon/Google Drive/coding/nw_notebooks/pdz3_kb_complete_apo_local_copy.txt"
 # kb_BB = "C:/Users/nixon/Google Drive/coding/nw_notebooks/kb_SS.txt"
 # #protease = "C:/Users/nixon/Google Drive/coding/nw_notebooks/kb_5ms_apo_local_copy.txt"
 # """The table should be a complete table with residue name and atom name already included"""
-# mgt = MGTools(pdbid="1BE9", table_path=pdz3, ressep=3)
+mgt = MGTools(pdbid="1BE9", table_path=pdz3, ressep=3)
 # mgt1 = MGTools(pdbid="3TGI", table_path=kb_BB, ressep=3)
 #
 # print(mgt.table.head())
@@ -24,8 +24,12 @@
 # # print((mgt.univ.segments[0].residues.resnames == "GLY").sum())
 # # print(mgt.univ.segments[0].residues.resnames[:10])
 
-didi = dict()
-didi["ressep"] = 3
+# didi = dict()
+# didi["ressep"] = 3
+#
+# if "ressep" in didi.keys():
+#     print(True)
 
-if "ressep" in didi.keys():
-    print(True)
+jjj = "bs"
+if jjj:
+    print(jjj)

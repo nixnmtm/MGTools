@@ -10,16 +10,24 @@ class BuildMG(object):
     """
     1. Base class for loading Coupling strength dataframe.
     """
-    def __init__(self, filename: str, **kwargs):
+    def __init__(self, filename: str, ressep=3, splitMgt=None, segid=None):
         """
         :param filename: Name of the file to be loaded
-        :param dirpath: Directory Path of file
+        :param ressep: residue separation( >= I,I + ressep), default is I,I+3
+        :type int
+        :param splitMgt: split mgt into BB or BS or SS
+        :type str
+        :param segid: segment id to analyze, if not mentioned all segid is used
+        :type str
         """
         self.filename = filename
         self.dir_path = '../Inputs/'
         self.table = self.load_table()
-        if "ressep" in kwargs.keys():
-            self.ressep = kwargs["ressep"]
+        self.grouping = ["segidI", "resI", "segidJ", "resJ"]
+        self._index = ["segidI", "resI", "I", "segidJ", "resJ", "J"]
+        self.ressep = ressep
+        self.splitMgt = splitMgt
+        self.segid = segid
 
     def load_table(self, verbose: bool = False) -> pd.DataFrame:
         """
@@ -31,15 +39,15 @@ class BuildMG(object):
         if verbose:
             logging.info("Loading file: {} from {}".format(self.filename, self.dir_path))
         _, fileext = os.path.splitext(self.filename)
-        if fileext[-3:] != "txt":
-            logging.error("Please provide a txt file")
+        if not (fileext[-3:] == "txt") or (fileext[-3:] == "bz2"):
+            logging.error("Please provide a appropriate file, with extension either txt or bz2")
         filepath = os.path.join(self.dir_path, self.filename)
         os.path.exists(filepath)
         table = pd.read_csv(os.path.join(filepath), sep=' ')
         if str(table.columns[0]).startswith("Unnamed"):
             table = table.drop(table.columns[0], axis=1)
         if verbose:
-            logging.info("File loaded")
+            logging.info("File loaded.")
         return table
 
     def splitSS(self, df: pd.DataFrame = None, write: bool = False, prefix: str = None) -> tuple:
@@ -92,24 +100,44 @@ class BuildMG(object):
     # TODO: Need to think about including ressep efficiently
     # TODO: MGBuild is just upto building the symmetric matrix
     # TODO: So Sum, Mean and CSM construction need to be included in this - think and do
-    def sepres(self):
+    def sepres(self, table=None, ressep=None):
         """
         Separate residues with given sequence separation number (ressep)
 
         :return: DataFrame after residue separation
         """
-        tmp = self.table[self.table["segidI"] == self.table["segidJ"]]
+        if table is None:
+            table = self.table
+        if ressep is None:
+            ressep = self.ressep
+
+        tmp = table[table["segidI"] == table["segidJ"]]
         tmp = tmp[
-            (tmp["resI"] >= tmp["resJ"] + self.ressep) |
-            (tmp["resJ"] >= tmp["resI"] + self.ressep)
+            (tmp["resI"] >= tmp["resJ"] + ressep) |
+            (tmp["resJ"] >= tmp["resI"] + ressep)
             ]
-        diff = self.table[self.table["segidI"] != self.table["segidJ"]]
+        diff = table[table["segidI"] != table["segidJ"]]
         df = pd.concat([tmp, diff], axis=0)
         return df
 
-    def sum_mean(self, segid=None):
-        """Returns the sum, mean and standard deviation of residues based on the self.grouping"""
+    def sum_mean(self, segid: object = None) -> object:
+        """
+        Returns the sum, mean and standard deviation of residues based on the self.grouping
+
+        """
+
         tab_sep = self.sepres()
+        if self.splitMgt is not None:
+            (BB, BS, SS) = self.splitSS()
+            tab = self.splitMgt
+            if tab == 'BB':
+                tab_sep = self.sepres(table=BB)
+            elif tab == 'BS':
+                tab_sep = self.sepres(table=BS)
+            elif tab == 'SS':
+                tab_sep = self.sepres(table=SS)
+            else:
+                logging.warning("splitMGT not recognized")
         if segid:
             tab_sep = tab_sep[(tab_sep["segidI"] == segid) & (tab_sep["segidJ"] == segid)]
         tab_sum = tab_sep.groupby(self.grouping).sum()
@@ -131,9 +159,12 @@ class BuildMG(object):
             ref_mat[row, col] = diag_val
             return pd.DataFrame(ref_mat, index=np.unique(_tab.reset_index().resI.values),
                                 columns=np.unique(_tab.reset_index().resI.values))
-for file in os.listdir('../Inputs/'):
-    mgt = BuildMG(filename=file)
-    print(file)
-    bb, bs, ss = mgt.splitSS()
-    print(mgt.table.shape[0])
-    print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
+
+
+mgt = BuildMG(filename="apo_pdz.txt", splitMgt="BB", ressep=1)
+bb, bs, ss = mgt.splitSS()
+print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
+print(mgt.table.shape[0])
+tab_sum, tab_mean, tab_std = mgt.sum_mean()
+print(tab_sum.head())
+
