@@ -21,7 +21,8 @@ class BuildMG(object):
         :type str
         """
         self.filename = filename
-        self.dir_path = '../Inputs/'
+        self.module_path = os.path.dirname(os.path.realpath(__file__))
+        self.input_path = os.path.join(self.module_path + "/../Inputs")
         self.table = self.load_table()
         self.grouping = ["segidI", "resI", "segidJ", "resJ"]
         self._index = ["segidI", "resI", "I", "segidJ", "resJ", "J"]
@@ -29,25 +30,23 @@ class BuildMG(object):
         self.splitMgt = splitMgt
         self.segid = segid
 
-    def load_table(self, verbose: bool = False) -> pd.DataFrame:
+    def load_table(self) -> pd.DataFrame:
         """
         Load Coupling Strength DataFrame
         :param verbose: verbosity
         :return: Structured coupling strength DataFrame
 
         """
-        if verbose:
-            logging.info("Loading file: {} from {}".format(self.filename, self.dir_path))
+        logging.info("Loading file: {} from {}".format(self.filename, self.input_path))
         _, fileext = os.path.splitext(self.filename)
         if not (fileext[-3:] == "txt") or (fileext[-3:] == "bz2"):
             logging.error("Please provide a appropriate file, with extension either txt or bz2")
-        filepath = os.path.join(self.dir_path, self.filename)
+        filepath = os.path.join(self.input_path, self.filename)
         os.path.exists(filepath)
         table = pd.read_csv(os.path.join(filepath), sep=' ')
         if str(table.columns[0]).startswith("Unnamed"):
             table = table.drop(table.columns[0], axis=1)
-        if verbose:
-            logging.info("File loaded.")
+        logging.info("File loaded.")
         return table
 
     def splitSS(self, df: pd.DataFrame = None, write: bool = False, prefix: str = None) -> tuple:
@@ -150,7 +149,6 @@ class BuildMG(object):
         """
         if tab is None:
             _, tab, _ = self.sum_mean(segid)
-
         try:
             tab.ndim == 1
         except TypeError:
@@ -161,14 +159,4 @@ class BuildMG(object):
             ref_mat = _tab.drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
             row, col = np.diag_indices(ref_mat.shape[0])
             ref_mat[row, col] = diag_val
-            return pd.DataFrame(ref_mat, index=np.unique(_tab.reset_index().resI.values),
-                                columns=np.unique(_tab.reset_index().resI.values))
-
-
-mgt = BuildMG(filename="apo_pdz.txt", splitMgt="BS", ressep=2)
-# bb, bs, ss = mgt.splitSS()
-# print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
-# print(mgt.table.shape[0])
-# tab_sum, tab_mean, tab_std = mgt.sum_mean()
-# print(tab_sum.head())
-print(mgt.csm_mat())
+            return pd.DataFrame(ref_mat, index=np.unique(_tab.resI.values), columns=np.unique(_tab.resI.values))
