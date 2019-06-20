@@ -2,7 +2,6 @@ import pandas as pd
 import os
 import logging
 import numpy as np
-
 logging.basicConfig(level=logging.INFO)
 
 
@@ -83,7 +82,7 @@ class BuildMG(object):
             # write the file, if needed
             if write:
                 if prefix is None:
-                    logging.error("prefix is not defined")
+                    logging.error("prefix is not defined in write")
                     exit(1)
                 else:
                     # write the files in current directory
@@ -106,7 +105,7 @@ class BuildMG(object):
             table = self.table
         if ressep is None:
             ressep = self.ressep
-
+        logging.info("DataFrame is populated with ressep: {}".format(ressep))
         tmp = table[table["segidI"] == table["segidJ"]]
         tmp = tmp[
             (tmp["resI"] >= tmp["resJ"] + ressep) |
@@ -116,25 +115,29 @@ class BuildMG(object):
         df = pd.concat([tmp, diff], axis=0)
         return df
 
-    def sum_mean(self, segid: object = None) -> object:
+    def sum_mean(self, table=None, segid=None, ressep=None) -> object:
         """
         Returns the sum, mean and standard deviation of residues based on the self.grouping
 
         """
+        if table is None:
+            tab_sep = self.sepres(ressep)
+            if self.splitMgt is not None:
+                (BB, BS, SS) = self.splitSS()
+                tab = self.splitMgt
+                if tab == 'BB':
+                    tab_sep = self.sepres(table=BB)
+                elif tab == 'BS':
+                    tab_sep = self.sepres(table=BS)
+                elif tab == 'SS':
+                    tab_sep = self.sepres(table=SS)
+                else:
+                    logging.warning("splitMGT not recognized")
+        else:
+            tab_sep = self.sepres(table, ressep)
 
-        tab_sep = self.sepres()
-        if self.splitMgt is not None:
-            (BB, BS, SS) = self.splitSS()
-            tab = self.splitMgt
-            if tab == 'BB':
-                tab_sep = self.sepres(table=BB)
-            elif tab == 'BS':
-                tab_sep = self.sepres(table=BS)
-            elif tab == 'SS':
-                tab_sep = self.sepres(table=SS)
-            else:
-                logging.warning("splitMGT not recognized")
-        if segid:
+        if segid is not None:
+            logging.info("only segid: {} is populated".format(segid))
             tab_sep = tab_sep[(tab_sep["segidI"] == segid) & (tab_sep["segidJ"] == segid)]
         tab_sum = tab_sep.groupby(self.grouping).sum()
         tab_mean = tab_sum.mean(axis=1)
@@ -148,11 +151,12 @@ class BuildMG(object):
 
         """
         if tab is None:
-            _, tab, _ = self.sum_mean(segid)
+            _, tab, _ = self.sum_mean(segid=segid, ressep=ressep)
+
         try:
             tab.ndim == 1
         except TypeError:
-            print('Dimension of the mat should not exceed 1, as we are stacking from each column')
+            logging.error('Dimension of the mat should not exceed 1, as we are stacking from each column')
         else:
             _tab = tab.reset_index()
             diag_val = _tab.groupby("resI").sum().drop("resJ", axis=1).values.ravel()

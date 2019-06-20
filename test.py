@@ -32,10 +32,24 @@ import numpy as np
 
 
 from src.core import BuildMG
-mgt = BuildMG(filename="apo_pdz.txt", splitMgt="BB", ressep=0)
-# bb, bs, ss = mgt.splitSS()
+mgt = BuildMG(filename="apo_pdz.txt", splitMgt="SS", ressep=1)
+bb, bs, ss = mgt.splitSS()
 # print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
 # print(mgt.table.shape[0])
-# tab_sum, tab_mean, tab_std = mgt.sum_mean()
-# print(tab_sum.head())
-mgt.csm_mat()
+s, m, d = mgt.sum_mean()
+tab_sum, tab_mean, tab_std = mgt.sum_mean(bb, ressep=3)
+print(m.head())
+print(tab_mean.head())
+
+# # print(tab_sum.head())
+# print(ss.head())
+# print(ss.set_index("resI"))
+# #print(ss.loc["PDZ3", 320])
+# print(np.unique(ss.resI.values))
+
+# _tab = tab_mean.reset_index()
+# diag_val = _tab.groupby("resI").sum().drop("resJ", axis=1).values.ravel()
+# ref_mat = _tab.drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
+# row, col = np.diag_indices(ref_mat.shape[0])
+# ref_mat[row, col] = diag_val
+# print(pd.DataFrame(ref_mat, index=np.unique(_tab.resI.values), columns=np.unique(_tab.resI.values)))
