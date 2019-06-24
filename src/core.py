@@ -2,7 +2,6 @@ import pandas as pd
 import os
 import logging
 import numpy as np
-
 logging.basicConfig(level=logging.INFO)
 
 
@@ -83,7 +82,7 @@ class BuildMG(object):
             # write the file, if needed
             if write:
                 if prefix is None:
-                    logging.error("prefix is not defined")
+                    logging.error("prefix is not defined in write")
                     exit(1)
                 else:
                     # write the files in current directory
@@ -106,7 +105,7 @@ class BuildMG(object):
             table = self.table
         if ressep is None:
             ressep = self.ressep
-
+        logging.info("DataFrame is populated with ressep: {}".format(ressep))
         tmp = table[table["segidI"] == table["segidJ"]]
         tmp = tmp[
             (tmp["resI"] >= tmp["resJ"] + ressep) |
@@ -116,47 +115,72 @@ class BuildMG(object):
         df = pd.concat([tmp, diff], axis=0)
         return df
 
-    def sum_mean(self, segid: object = None) -> object:
+    def sum_mean(self, table=None, segid=None, ressep=None):
         """
         Returns the sum, mean and standard deviation of residues based on the self.grouping
 
+        :param table: DataFrame to sum
+        :param segid: segment id
+        :param ressep: Number of residues separation
+        :return: list of DataFrames [sum, mean, stand deviation]
         """
-
-        tab_sep = self.sepres()
-        if self.splitMgt is not None:
-            (BB, BS, SS) = self.splitSS()
-            tab = self.splitMgt
-            if tab == 'BB':
-                tab_sep = self.sepres(table=BB)
-            elif tab == 'BS':
-                tab_sep = self.sepres(table=BS)
-            elif tab == 'SS':
-                tab_sep = self.sepres(table=SS)
+        if table is None:
+            if self.splitMgt is not None:
+                (BB, BS, SS) = self.splitSS()
+                tab = self.splitMgt
+                if tab == 'BB':
+                    tab_sep = self.sepres(table=BB)
+                elif tab == 'BS':
+                    tab_sep = self.sepres(table=BS)
+                elif tab == 'SS':
+                    tab_sep = self.sepres(table=SS)
+                else:
+                    logging.warning("splitMGT not recognized")
             else:
-                logging.warning("splitMGT not recognized")
-        if segid:
+                tab_sep = self.sepres(ressep)
+        else:
+            tab_sep = self.sepres(table, ressep)
+
+        if segid is not None:
+            logging.info("only segid: {} is populated".format(segid))
             tab_sep = tab_sep[(tab_sep["segidI"] == segid) & (tab_sep["segidJ"] == segid)]
         tab_sum = tab_sep.groupby(self.grouping).sum()
         tab_mean = tab_sum.mean(axis=1)
         tab_std = tab_sum.std(axis=1)
         return tab_sum, tab_mean, tab_std
 
-    def csm_mat(self, tab=None, segid=None, ressep=None):
+    def mgt_mat(self, segid=None, ressep=None, segsplit=False):
+        """
+        Build MGT Matrix
+
+        :param segid: input segment id
+        :param ressep: input residue separation
+        :param segsplit: True: split matrix based on segids(ie. if 2 segids present, list of 2 dataframes are returned)
+                         False: A single matrix with inter- & intra- segement interactions is returned
+        :return: MGT dataframe
 
         """
-        Returns symmetric diagonally dominant residue-residue coupling strength matrix (CSM)
+        def core(df):
+            diag_val = df.groupby("resI").sum().drop("resJ", axis=1).values.ravel()
+            ref_mat = df.drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
+            row, col = np.diag_indices(ref_mat.shape[0])
+            ref_mat[row, col] = diag_val
+            return pd.DataFrame(ref_mat, index=np.unique(df.resI.values), columns=np.unique(df.resI.values))
 
-        """
-        if tab is None:
-            _, tab, _ = self.sum_mean(segid)
+        _, tab, _ = self.sum_mean(segid=segid, ressep=ressep)
+
         try:
             tab.ndim == 1
         except TypeError:
-            print('Dimension of the mat should not exceed 1, as we are stacking from each column')
+            logging.error('Dimension of the mat should not exceed 1, as we are stacking from each column')
         else:
             _tab = tab.reset_index()
-            diag_val = _tab.groupby("resI").sum().drop("resJ", axis=1).values.ravel()
-            ref_mat = _tab.drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
-            row, col = np.diag_indices(ref_mat.shape[0])
-            ref_mat[row, col] = diag_val
-            return pd.DataFrame(ref_mat, index=np.unique(_tab.resI.values), columns=np.unique(_tab.resI.values))
+            segs = np.unique(_tab["segidI"].values)
+            if segsplit and len(segs) > 1:
+                dfs = list()
+                for seg in segs:
+                    tmp = _tab[(_tab["segidI"] == seg) & (_tab["segidJ"] == seg)]
+                    dfs.append(core(tmp))
+                return dfs
+            else:
+                return core(_tab)
