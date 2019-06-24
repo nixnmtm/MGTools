@@ -115,13 +115,16 @@ class BuildMG(object):
         df = pd.concat([tmp, diff], axis=0)
         return df
 
-    def sum_mean(self, table=None, segid=None, ressep=None) -> object:
+    def sum_mean(self, table=None, segid=None, ressep=None):
         """
         Returns the sum, mean and standard deviation of residues based on the self.grouping
 
+        :param table: DataFrame to sum
+        :param segid: segment id
+        :param ressep: Number of residues separation
+        :return: list of DataFrames [sum, mean, stand deviation]
         """
         if table is None:
-            tab_sep = self.sepres(ressep)
             if self.splitMgt is not None:
                 (BB, BS, SS) = self.splitSS()
                 tab = self.splitMgt
@@ -133,6 +136,8 @@ class BuildMG(object):
                     tab_sep = self.sepres(table=SS)
                 else:
                     logging.warning("splitMGT not recognized")
+            else:
+                tab_sep = self.sepres(ressep)
         else:
             tab_sep = self.sepres(table, ressep)
 
@@ -144,14 +149,25 @@ class BuildMG(object):
         tab_std = tab_sum.std(axis=1)
         return tab_sum, tab_mean, tab_std
 
-    def csm_mat(self, tab=None, segid=None, ressep=None):
+    def mgt_mat(self, segid=None, ressep=None, segsplit=False):
+        """
+        Build MGT Matrix
+
+        :param segid: input segment id
+        :param ressep: input residue separation
+        :param segsplit: True: split matrix based on segids(ie. if 2 segids present, list of 2 dataframes are returned)
+                         False: A single matrix with inter- & intra- segement interactions is returned
+        :return: MGT dataframe
 
         """
-        Returns symmetric diagonally dominant residue-residue coupling strength matrix (CSM)
+        def core(df):
+            diag_val = df.groupby("resI").sum().drop("resJ", axis=1).values.ravel()
+            ref_mat = df.drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
+            row, col = np.diag_indices(ref_mat.shape[0])
+            ref_mat[row, col] = diag_val
+            return pd.DataFrame(ref_mat, index=np.unique(df.resI.values), columns=np.unique(df.resI.values))
 
-        """
-        if tab is None:
-            _, tab, _ = self.sum_mean(segid=segid, ressep=ressep)
+        _, tab, _ = self.sum_mean(segid=segid, ressep=ressep)
 
         try:
             tab.ndim == 1
@@ -159,8 +175,12 @@ class BuildMG(object):
             logging.error('Dimension of the mat should not exceed 1, as we are stacking from each column')
         else:
             _tab = tab.reset_index()
-            diag_val = _tab.groupby("resI").sum().drop("resJ", axis=1).values.ravel()
-            ref_mat = _tab.drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
-            row, col = np.diag_indices(ref_mat.shape[0])
-            ref_mat[row, col] = diag_val
-            return pd.DataFrame(ref_mat, index=np.unique(_tab.resI.values), columns=np.unique(_tab.resI.values))
+            segs = np.unique(_tab["segidI"].values)
+            if segsplit and len(segs) > 1:
+                dfs = list()
+                for seg in segs:
+                    tmp = _tab[(_tab["segidI"] == seg) & (_tab["segidJ"] == seg)]
+                    dfs.append(core(tmp))
+                return dfs
+            else:
+                return core(_tab)
