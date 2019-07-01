@@ -1,9 +1,0 @@
-# run below command for MDanalysis & nglview to get installed
-# > conda config --add channels conda-forge
-# then run
-# > conda install --file requirements.txt
-pandas==0.24.2
-mdanalysis==0.19.2
-numpy==1.16.4
-biopython==1.73
-nglview==1.1.7

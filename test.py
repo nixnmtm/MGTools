@@ -32,15 +32,15 @@ import numpy as np
 
 
 from src.core import BuildMG
-mgt = BuildMG(filename="apo_pdz.txt", splitMgt="SS", ressep=1)
-bb, bs, ss = mgt.splitSS()
+mgt = BuildMG(filename="holo_pdz.txt", ressep=1)
 # print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
 # print(mgt.table.shape[0])
-s, m, d = mgt.sum_mean()
-tab_sum, tab_mean, tab_std = mgt.sum_mean(bb, ressep=3)
-print(m.head())
-print(tab_mean.head())
+cript, pdz = mgt.mgt_mat(segsplit=True)
 
+print(cript.head())
+print(pdz.head())
+
+help(BuildMG)
 # # print(tab_sum.head())
 # print(ss.head())
 # print(ss.set_index("resI"))
