@@ -10,3 +10,15 @@ can be used to effectively dissect the inter-reside couplings due to backbone-ba
 backbone-sidechain, and sidechain-sidechain interactions, hence revealing the mechanical 
 architecture of a protein structure. We also analyze the functional implications of the MGT 
 in extracting allosteric communication and functionally important residues in proteins.
+
+
+### Dependencies
+
+"Run below commands to setup the environment or run the .yml" 
+
+conda config --add channels conda-forge \
+conda install mdanalysis -c conda-forge \
+conda install ipykernel \
+conda install -c plotly plotly \
+conda install nglview -c conda-forge \
+python -m ipykernel install --user --name py36MGT --display-name "Python (py36MGT)"
