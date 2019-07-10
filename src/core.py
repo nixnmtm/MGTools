@@ -149,7 +149,7 @@ class BuildMG(object):
         tab_std = tab_sum.std(axis=1)
         return tab_sum, tab_mean, tab_std
 
-    def mgt_mat(self, segid=None, ressep=None, segsplit=False):
+    def mgt_mat(self, segid=None, ressep=None):
         """
         Build MGT Matrix
 
@@ -160,12 +160,19 @@ class BuildMG(object):
         :return: MGT dataframe
 
         """
-        def core(df):
+        def mgtcore(df):
+            #tmp = df.copy(deep=True)
             diag_val = df.groupby("resI").sum().drop("resJ", axis=1).values.ravel()
             ref_mat = df.drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
             row, col = np.diag_indices(ref_mat.shape[0])
             ref_mat[row, col] = diag_val
-            return pd.DataFrame(ref_mat, index=np.unique(df.resI.values), columns=np.unique(df.resI.values))
+            ref_mat = pd.DataFrame(ref_mat, index=np.unique(df.resI.values), columns=np.unique(df.resI.values))
+            # # Maintain table shape by adding zero for glycine residues missing in SS
+            # if self.splitMgt == "SS":
+            #     start = np.unique(tmp["resI"].values)[0]  # start residue number
+            #     end = np.unique(tmp["resI"].values)[-1]  # end residue number
+            #     ref_mat = ref_mat.reindex(np.arange(start, end+1)).T.reindex(np.arange(start, end+1)).replace(np.nan, 0.0)
+            return ref_mat
 
         _, tab, _ = self.sum_mean(segid=segid, ressep=ressep)
 
@@ -175,12 +182,12 @@ class BuildMG(object):
             logging.error('Dimension of the mat should not exceed 1, as we are stacking from each column')
         else:
             _tab = tab.reset_index()
-            segs = np.unique(_tab["segidI"].values)
-            if segsplit and len(segs) > 1:
+            segments = np.unique(_tab["segidI"].values)
+            if len(segments) > 1:
                 dfs = list()
-                for seg in segs:
+                for seg in segments:
                     tmp = _tab[(_tab["segidI"] == seg) & (_tab["segidJ"] == seg)]
-                    dfs.append(core(tmp))
+                    dfs.append(mgtcore(tmp))
                 return dfs
             else:
-                return core(_tab)
+                return mgtcore(_tab)
