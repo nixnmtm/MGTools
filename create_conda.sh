@@ -16,6 +16,7 @@ else
 
   # Create environment.yml or not
    echo "installing base packages"
+   conda config --add channels conda-forge
    conda create --name ${input_variable}\
    python=3.6 ipykernel mdanalysis nglview plotly
 echo "to exit: source deactivate"
