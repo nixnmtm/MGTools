@@ -2,6 +2,7 @@ from __future__ import print_function
 import numpy as np
 import logging
 from src.core import BuildMG
+import matplotlib.pyplot as plt
 
 
 logging.basicConfig(level=logging.INFO)
@@ -131,6 +132,7 @@ class CheckDistribution(object):
         self.verbose = verbose
         self.top = top
         self.processes = processes
+        self.pcuts = dict()
         self.cdfs = {
             "alpha": {"p": [], "D": []},  # Alpha
             "anglit": {"p": [], "D": []},  # Anglit
@@ -245,17 +247,15 @@ class CheckDistribution(object):
         :param fcts: distribution to plot
         :param data: data to check
         :param pd_cut: cumulative density function cutoff
-        """
-        import matplotlib.pyplot as plt
-        import numpy as np
 
+        :return plots image and returns pcut values
+        """
         # plot data
         plt.hist(data, normed=True, bins=max(10, int(len(data) / 10)))
 
         # plot fitted probability
-
         for i in range(len(fcts)):
-            fct = fcts[i]
+            fct = fcts[i][0]
             params = eval("scipy.stats." + fct + ".fit(data)")
             f = eval("scipy.stats." + fct + ".freeze" + str(params))
             x = np.linspace(f.ppf(0.001), f.ppf(0.999), len(data))
@@ -270,11 +270,12 @@ class CheckDistribution(object):
             diff = abs(tail - pd_cut)
             x_pos = diff.argmin()
             p_cut = np.round(x[x_pos + tmp], 2)
-            print("{}: {}".format(fcts[i], p_cut))
-            plt.axvline()
+            self.pcuts[fct] = p_cut
+            plt.axvline(p_cut, color='k', linestyle='--')
         plt.legend(loc='best', frameon=False)
         plt.title("Top " + str(len(fcts)) + " Results")
         plt.show()
+        return self.pcuts
 
     def run(self,  data, sort_it=True):
         """
