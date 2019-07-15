@@ -1,6 +1,9 @@
+from __future__ import print_function
 import numpy as np
 import logging
 from src.core import BuildMG
+import matplotlib.pyplot as plt
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -98,3 +101,216 @@ class MGTools(object):
                     if res[m][1] < n:
                         res[m][1] = n
         return res
+
+#########################################################################################
+#########################################################################################
+import scipy.stats
+import warnings
+import random
+import math
+
+# just for surpressing warnings
+warnings.simplefilter('ignore')
+
+from joblib import Parallel, delayed
+
+class CheckDistribution(object):
+    """
+        # title           :distribution_checkX.py
+        # description     :Checks a sample against 80 distributions by applying the Kolmogorov-Smirnov test.
+        # author          :Andre Dietrich, modified by Nixon
+        # version         :0.1
+        # usage           :distribution_check.run()
+        # original gitlab project link: https://gitlab.com/OvGU-ESS/distribution-check
+        # python_version  :2.* and 3.*
+    """
+    def __init__(self, iteration=1, exclude=10.0, verbose=False, top=10, processes=-1):
+        # list of all available distributions
+
+        self.iteration = iteration
+        self.exclude = exclude
+        self.verbose = verbose
+        self.top = top
+        self.processes = processes
+        self.pcuts = dict()
+        self.cdfs = {
+            "alpha": {"p": [], "D": []},  # Alpha
+            "anglit": {"p": [], "D": []},  # Anglit
+            "arcsine": {"p": [], "D": []},  # Arcsine
+            "beta": {"p": [], "D": []},  # Beta
+            "betaprime": {"p": [], "D": []},  # Beta Prime
+            "bradford": {"p": [], "D": []},  # Bradford
+            "burr": {"p": [], "D": []},  # Burr
+            "cauchy": {"p": [], "D": []},  # Cauchy
+            "chi": {"p": [], "D": []},  # Chi
+            "chi2": {"p": [], "D": []},  # Chi-squared
+            "cosine": {"p": [], "D": []},  # Cosine
+            "dgamma": {"p": [], "D": []},  # Double Gamma
+            "dweibull": {"p": [], "D": []},  # Double Weibull
+            "erlang": {"p": [], "D": []},  # Erlang
+            "expon": {"p": [], "D": []},  # Exponential
+            "exponweib": {"p": [], "D": []},  # Exponentiated Weibull
+            "exponpow": {"p": [], "D": []},  # Exponential Power
+            "f": {"p": [], "D": []},  # F (Snecdor F)
+            "fatiguelife": {"p": [], "D": []},  # Fatigue Life (Birnbaum-Sanders)
+            "fisk": {"p": [], "D": []},  # Fisk
+            "foldcauchy": {"p": [], "D": []},  # Folded Cauchy
+            "foldnorm": {"p": [], "D": []},  # Folded Normal
+            "frechet_r": {"p": [], "D": []},  # Frechet Right Sided, Extreme Value Type II
+            "frechet_l": {"p": [], "D": []},  # Frechet Left Sided, Weibull_max
+            "gamma": {"p": [], "D": []},  # Gamma
+            "gausshyper": {"p": [], "D": []},  # Gauss Hypergeometric
+            "genexpon": {"p": [], "D": []},  # Generalized Exponential
+            "genextreme": {"p": [], "D": []},  # Generalized Extreme Value
+            "gengamma": {"p": [], "D": []},  # Generalized gamma
+            "genhalflogistic": {"p": [], "D": []},  # Generalized Half Logistic
+            "genlogistic": {"p": [], "D": []},  # Generalized Logistic
+            "genpareto": {"p": [], "D": []},  # Generalized Pareto
+            "gilbrat": {"p": [], "D": []},  # Gilbrat
+            "gompertz": {"p": [], "D": []},  # Gompertz (Truncated Gumbel)
+            "gumbel_l": {"p": [], "D": []},  # Left Sided Gumbel, etc.
+            "gumbel_r": {"p": [], "D": []},  # Right Sided Gumbel
+            "halfcauchy": {"p": [], "D": []},  # Half Cauchy
+            "halflogistic": {"p": [], "D": []},  # Half Logistic
+            "halfnorm": {"p": [], "D": []},  # Half Normal
+            "hypsecant": {"p": [], "D": []},  # Hyperbolic Secant
+            "invgamma": {"p": [], "D": []},  # Inverse Gamma
+            "invgauss": {"p": [], "D": []},  # Inverse Normal
+            "invweibull": {"p": [], "D": []},  # Inverse Weibull
+            "johnsonsb": {"p": [], "D": []},  # Johnson SB
+            "johnsonsu": {"p": [], "D": []},  # Johnson SU
+            "laplace": {"p": [], "D": []},  # Laplace
+            "logistic": {"p": [], "D": []},  # Logistic
+            "loggamma": {"p": [], "D": []},  # Log-Gamma
+            "loglaplace": {"p": [], "D": []},  # Log-Laplace (Log Double Exponential)
+            "lognorm": {"p": [], "D": []},  # Log-Normal
+            "lomax": {"p": [], "D": []},  # Lomax (Pareto of the second kind)
+            "maxwell": {"p": [], "D": []},  # Maxwell
+            "mielke": {"p": [], "D": []},  # Mielke's Beta-Kappa
+            "nakagami": {"p": [], "D": []},  # Nakagami
+            "ncx2": {"p": [], "D": []},  # Non-central chi-squared
+            "ncf": {"p": [], "D": []},  # Non-central F
+            "nct": {"p": [], "D": []},  # Non-central Student's T
+            "norm": {"p": [], "D": []},  # Normal (Gaussian)
+            "pareto": {"p": [], "D": []},  # Pareto
+            "pearson3": {"p": [], "D": []},  # Pearson type III
+            "powerlaw": {"p": [], "D": []},  # Power-function
+            "powerlognorm": {"p": [], "D": []},  # Power log normal
+            "powernorm": {"p": [], "D": []},  # Power normal
+            "rdist": {"p": [], "D": []},  # R distribution
+            "reciprocal": {"p": [], "D": []},  # Reciprocal
+            "rayleigh": {"p": [], "D": []},  # Rayleigh
+            "rice": {"p": [], "D": []},  # Rice
+            "recipinvgauss": {"p": [], "D": []},  # Reciprocal Inverse Gaussian
+            "semicircular": {"p": [], "D": []},  # Semicircular
+            "t": {"p": [], "D": []},  # Student's T
+            "triang": {"p": [], "D": []},  # Triangular
+            "truncexpon": {"p": [], "D": []},  # Truncated Exponential
+            "truncnorm": {"p": [], "D": []},  # Truncated Normal
+            "tukeylambda": {"p": [], "D": []},  # Tukey-Lambda
+            "uniform": {"p": [], "D": []},  # Uniform
+            "vonmises": {"p": [], "D": []},  # Von-Mises (Circular)
+            "wald": {"p": [], "D": []},  # Wald
+            "weibull_min": {"p": [], "D": []},  # Minimum Weibull (see Frechet)
+            "weibull_max": {"p": [], "D": []},  # Maximum Weibull (see Frechet)
+            "wrapcauchy": {"p": [], "D": []},  # Wrapped Cauchy
+            "ksone": {"p": [], "D": []},  # Kolmogorov-Smirnov one-sided (no stats)
+            "kstwobign": {"p": [], "D": []}}  # Kolmogorov-Smirnov two-sided test for Large N
+
+    ########################################################################################
+
+    def check(self, data, fct, verbose=False):
+        """
+
+        :param data: data to check
+        :param fct: distribution to test
+        :param verbose: verbosity
+        :return: tuple of (distribution name, probability, D)
+        """
+        # fit our data set against every probability distribution
+        parameters = eval("scipy.stats." + fct + ".fit(data)");
+        # Applying the Kolmogorov-Smirnof two sided test
+        D, p = scipy.stats.kstest(data, fct, args=parameters);
+
+        if math.isnan(p): p = 0
+        if math.isnan(D): D = 0
+
+        if verbose:
+            print(fct.ljust(16) + "p: " + str(p).ljust(25) + "D: " + str(D))
+
+        return (fct, p, D)
+
+    ########################################################################################
+
+    def plot(self, fcts, data, pd_cut=0.95):
+        """
+        :param fcts: distribution to plot
+        :param data: data to check
+        :param pd_cut: cumulative density function cutoff
+
+        :return plots image and returns pcut values
+        """
+        # plot data
+        plt.hist(data, normed=True, bins=max(10, int(len(data) / 10)))
+
+        # plot fitted probability
+        for i in range(len(fcts)):
+            fct = fcts[i][0]
+            params = eval("scipy.stats." + fct + ".fit(data)")
+            f = eval("scipy.stats." + fct + ".freeze" + str(params))
+            x = np.linspace(f.ppf(0.001), f.ppf(0.999), len(data))
+            plt.plot(x, f.pdf(x), lw=3, label=fct)
+            cd = f.cdf(x)
+            tmp = f.pdf(x).argmax()
+            if abs(max(data)) > abs(min(data)):
+                tail = cd[tmp:len(cd)]
+            else:
+                cd = 1 - cd
+                tail = cd[0:tmp]
+            diff = abs(tail - pd_cut)
+            x_pos = diff.argmin()
+            p_cut = np.round(x[x_pos + tmp], 2)
+            self.pcuts[fct] = p_cut
+            plt.axvline(p_cut, color='k', linestyle='--')
+        plt.legend(loc='best', frameon=False)
+        plt.title("Top " + str(len(fcts)) + " Results")
+        plt.show()
+        return self.pcuts
+
+    def run(self,  data, sort_it=True):
+        """
+        :param data: data to check distribution
+        :param sort_it: whether to sort the results
+        :return: sort_it: True: sorted list of tuples with (distribution name, probability, D)
+                          False: dictionary with distribution functions {"distribution name": {"p":float, "D":float}}
+        """
+        for i in range(self.iteration):
+            if self.iteration == 1:
+                data = data
+            else:
+                data = [value for value in data if random.random() >= self.exclude / 100]
+
+            results = Parallel(n_jobs=self.processes)(
+                delayed(self.check)(data, fct, self.verbose) for fct in self.cdfs.keys())
+
+            for res in results:
+                key, p, D = res
+                self.cdfs[key]["p"].append(p)
+                self.cdfs[key]["D"].append(D)
+            if sort_it:
+                print("-------------------------------------------------------------------")
+                print("Top %d after %d iteration(s)" % (self.top, i + 1,))
+                print("-------------------------------------------------------------------")
+                best = sorted(self.cdfs.items(), key=lambda elem: scipy.median(elem[1]["p"]), reverse=True)
+                for t in range(self.top):
+                    fct, values = best[t]
+                    print(str(t + 1).ljust(4), fct.ljust(16),
+                          "\tp: ", scipy.median(values["p"]),
+                          "\tD: ", scipy.median(values["D"]),
+                          end="")
+                    if len(values["p"]) > 1:
+                        print("\tvar(p): ", scipy.var(values["p"]),
+                              "\tvar(D): ", scipy.var(values["D"]), end="")
+                    print()
+            return best
+        return self.cdfs
