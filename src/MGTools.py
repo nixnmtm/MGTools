@@ -250,7 +250,7 @@ class CheckDistribution(object):
         :return plots image and returns pcut values
         """
         # plot data
-        plt.hist(self.data, normed=True, bins=max(10, int(len(data) / 10)))
+        plt.hist(self.data, normed=True, bins=max(10, int(len(self.data) / 10)))
 
         # plot fitted probability
         for i in range(len(fcts)):
