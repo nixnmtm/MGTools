@@ -2,17 +2,38 @@ import pandas as pd
 import os
 import logging
 import numpy as np
+
+
 logging.basicConfig(level=logging.INFO)
 
 
 class BuildMG(object):
     """
-    1. Base class for loading Coupling strength dataframe.
+    Base class for building Coupling strength dataframe.
+
+    :Example:
+    .. highlight:: python
+    .. code-block:: python
+
+        >>> from src.core import BuildMG
+        >>> mgt = BuildMG(filename="holo_pdz.txt", ressep=1, splitMgt="SS")
+        >>> print(mgt.mgt_mat())
+
+                  5         6         7         8         9
+        5  0.025300  0.022754  0.002543  0.000003  0.000000
+        6  0.022754  0.105062  0.068219  0.013300  0.000788
+        7  0.002543  0.068219  0.239772  0.086187  0.082822
+        8  0.000003  0.013300  0.086187  0.370769  0.271280
+        9  0.000000  0.000788  0.082822  0.271280  0.354890
+
     """
     def __init__(self, filename: str, ressep=3, splitMgt=None, segid=None):
         """
+        :func:`__init__` method docstring.
+        Creates a new :class:`BuildMG` instance.
+
         :param filename: Name of the file to be loaded
-        :param ressep: residue separation( >= I,I + ressep), default is I,I+3
+        :param ressep: residue separation( >= I,I + ressep), (default=3)
         :type int
         :param splitMgt: split mgt into BB or BS or SS
         :type str
@@ -95,7 +116,7 @@ class BuildMG(object):
         except Exception as e:
             logging.warning("Error in splitting secondary structures --> {}".format(str(e)))
 
-    def sepres(self, table=None, ressep=None):
+    def sepres(self, table: object = None, ressep: object = None) -> object:
         """
         :param table: table for sequence separation
         :param ressep: sequence separation to include (eg.  >= I,I + ressep), default is I,I+3)

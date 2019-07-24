@@ -1,0 +1,61 @@
+.. Molecular Graph Theory documentation master file, created by
+   sphinx-quickstart on Wed Jul 24 17:01:35 2019.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to Molecular Graph Theory's documentation!
+==================================================
+
+In molecular graph theory, edges that connect the nodes of amino acid residues are calculated from atomic fluctuations.
+The adjacency matrix (A) and the degree matrix (D) of the weighted graph are also defined based on the calculated edges.
+The molecular graph was then characterized by analyzing the unoriented Laplacian matrix, $(K=A+D)$.
+We showed that this framework can be used to effectively dissect the inter-reside couplings due to backbone-backbone,
+backbone-sidechain, and sidechain-sidechain interactions, hence revealing the mechanical architecture of a protein structure.
+We also analyze the functional implications of the MGT in extracting allosteric communication and functionally important residues in proteins.
+
+Fluctuation Matching
+--------------------
+
+Fluctuation matching is a process where the variances of bond fluctuations obtained from CG-ENM through
+normal mode analysis (NMA) and all-atom MD through trajectories are matched by adjusting the force constants in the ENM
+to reproduce the bond fluctuations observed in all-atom MD. The fluctuation matching results in force constant matrix of
+all CG bead interactions. The coupling strength is obtained by summing up the force constants of their respective CG
+sites. This coupling strength dataframe will be the input for :class:`core.BuildMG`.
+
+:mod:`core` module consists of the base :class:`core.BuildMG` class that builds the molecular graph from the fluctuogram
+data.
+
+.. automodule:: core
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:
+
+:mod:`MGTools` module consists of the base :class:`MGTools` class that contains the tools for MGT analysis.
+
+.. automodule:: MGTools
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:
+
+:mod:`MGNetwork` module is comprised of network building functions of MGT.
+
+.. automodule:: MGNetwork
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:
+
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Contents:
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

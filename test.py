@@ -31,12 +31,12 @@ import numpy as np
 #     print(True)
 
 
-# from src.core import BuildMG
-# mgt = BuildMG(filename="holo_pdz.txt", ressep=1, splitMgt="SS")
-# # print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
-# # print(mgt.table.shape[0])
-# cript, pdz = mgt.mgt_mat()
-# print(cript)
+from src.core import BuildMG
+mgt = BuildMG(filename="holo_pdz.txt", ressep=1, splitMgt="SS")
+# print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
+# print(mgt.table.shape[0])
+pdz, _ = mgt.mgt_mat()
+print(pdz)
 
 
 
@@ -52,7 +52,3 @@ import numpy as np
 # row, col = np.diag_indices(ref_mat.shape[0])
 # ref_mat[row, col] = diag_val
 # print(pd.DataFrame(ref_mat, index=np.unique(_tab.resI.values), columns=np.unique(_tab.resI.values))
-
-
-lll = ['at', 'atomix', 'jjj', 'kkk']
-print([l for l in lll if 'at' in l])

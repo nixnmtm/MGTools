@@ -14,13 +14,19 @@ class MGTools(object):
     #     super().__init__(table)  # super class can be called by this or "ProTools.__init__(self, pdbid)"
 
     @staticmethod
-    def eigenVect(M):
-        """ Return the eigenvectors and eigenvalues, ordered by decreasing values of the
+    def eigenVect(M: object) -> object:
+        """
+        Return the eigenvectors and eigenvalues, ordered by decreasing values of the
         eigenvalues, for a real symmetric matrix M. The sign of the eigenvectors is fixed
         so that the mean of its components is non-negative.
 
+        :param M: symmetric matrix to perform eigenvalue decomposition
+
+        :return: eigenvalues and eigenvectors
+
         :Example:
-         eigenVectors, eigenValues = eigenVect(M)
+
+        eigenVectors, eigenValues = eigenVect(M)
 
         """
         eigenValues, eigenVectors = np.linalg.eigh(M)
@@ -124,9 +130,10 @@ class CheckDistribution(object):
         # original gitlab project link: https://gitlab.com/OvGU-ESS/distribution-check
         # python_version  :2.* and 3.*
     """
-    def __init__(self, iteration=1, exclude=10.0, verbose=False, top=10, processes=-1):
+    def __init__(self, data, iteration=1, exclude=10.0, verbose=False, top=10, processes=-1):
         # list of all available distributions
 
+        self.data = data
         self.iteration = iteration
         self.exclude = exclude
         self.verbose = verbose
@@ -219,10 +226,9 @@ class CheckDistribution(object):
 
     ########################################################################################
 
-    def check(self, data, fct, verbose=False):
+    def check(self, fct, verbose=False):
         """
 
-        :param data: data to check
         :param fct: distribution to test
         :param verbose: verbosity
         :return: tuple of (distribution name, probability, D)
@@ -230,7 +236,7 @@ class CheckDistribution(object):
         # fit our data set against every probability distribution
         parameters = eval("scipy.stats." + fct + ".fit(data)");
         # Applying the Kolmogorov-Smirnof two sided test
-        D, p = scipy.stats.kstest(data, fct, args=parameters);
+        D, p = scipy.stats.kstest(self.data, fct, args=parameters);
 
         if math.isnan(p): p = 0
         if math.isnan(D): D = 0
@@ -242,27 +248,26 @@ class CheckDistribution(object):
 
     ########################################################################################
 
-    def plot(self, fcts, data, pd_cut=0.95):
+    def plot(self, fcts, pd_cut=0.95):
         """
         :param fcts: distribution to plot
-        :param data: data to check
         :param pd_cut: cumulative density function cutoff
 
         :return plots image and returns pcut values
         """
         # plot data
-        plt.hist(data, normed=True, bins=max(10, int(len(data) / 10)))
+        plt.hist(self.data, normed=True, bins=max(10, int(len(self.data) / 10)))
 
         # plot fitted probability
         for i in range(len(fcts)):
             fct = fcts[i][0]
             params = eval("scipy.stats." + fct + ".fit(data)")
             f = eval("scipy.stats." + fct + ".freeze" + str(params))
-            x = np.linspace(f.ppf(0.001), f.ppf(0.999), len(data))
+            x = np.linspace(f.ppf(0.001), f.ppf(0.999), len(self.data))
             plt.plot(x, f.pdf(x), lw=3, label=fct)
             cd = f.cdf(x)
             tmp = f.pdf(x).argmax()
-            if abs(max(data)) > abs(min(data)):
+            if abs(max(self.data)) > abs(min(self.data)):
                 tail = cd[tmp:len(cd)]
             else:
                 cd = 1 - cd
@@ -277,18 +282,17 @@ class CheckDistribution(object):
         plt.show()
         return self.pcuts
 
-    def run(self,  data, sort_it=True):
+    def run(self, sort_it=True):
         """
-        :param data: data to check distribution
         :param sort_it: whether to sort the results
         :return: sort_it: True: sorted list of tuples with (distribution name, probability, D)
                           False: dictionary with distribution functions {"distribution name": {"p":float, "D":float}}
         """
         for i in range(self.iteration):
             if self.iteration == 1:
-                data = data
+                data = self.data
             else:
-                data = [value for value in data if random.random() >= self.exclude / 100]
+                data = [value for value in self.data if random.random() >= self.exclude / 100]
 
             results = Parallel(n_jobs=self.processes)(
                 delayed(self.check)(data, fct, self.verbose) for fct in self.cdfs.keys())
