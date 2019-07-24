@@ -7,10 +7,12 @@ logging.basicConfig(level=logging.INFO)
 
 class BuildMG(object):
     """
-    1. Base class for loading Coupling strength dataframe.
+    Base class for loading Coupling strength dataframe.
     """
     def __init__(self, filename: str, ressep=3, splitMgt=None, segid=None):
         """
+        Creates a new :class:`BuildMG` instance.
+
         :param filename: Name of the file to be loaded
         :param ressep: residue separation( >= I,I + ressep), default is I,I+3
         :type int
@@ -95,7 +97,7 @@ class BuildMG(object):
         except Exception as e:
             logging.warning("Error in splitting secondary structures --> {}".format(str(e)))
 
-    def sepres(self, table=None, ressep=None):
+    def sepres(self, table: object = None, ressep: object = None) -> object:
         """
         :param table: table for sequence separation
         :param ressep: sequence separation to include (eg.  >= I,I + ressep), default is I,I+3)
