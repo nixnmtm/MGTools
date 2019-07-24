@@ -14,13 +14,19 @@ class MGTools(object):
     #     super().__init__(table)  # super class can be called by this or "ProTools.__init__(self, pdbid)"
 
     @staticmethod
-    def eigenVect(M):
-        """ Return the eigenvectors and eigenvalues, ordered by decreasing values of the
+    def eigenVect(M: object) -> object:
+        """
+        Return the eigenvectors and eigenvalues, ordered by decreasing values of the
         eigenvalues, for a real symmetric matrix M. The sign of the eigenvectors is fixed
         so that the mean of its components is non-negative.
 
+        :param M: symmetric matrix to perform eigenvalue decomposition
+
+        :return: eigenvalues and eigenvectors
+
         :Example:
-         eigenVectors, eigenValues = eigenVect(M)
+
+        eigenVectors, eigenValues = eigenVect(M)
 
         """
         eigenValues, eigenVectors = np.linalg.eigh(M)

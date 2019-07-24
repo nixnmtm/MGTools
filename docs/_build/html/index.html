@@ -38,20 +38,57 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="module-core">
-<span id="welcome-to-molecular-graph-theory-s-documentation"></span><h1>Welcome to Molecular Graph Theory's documentation!<a class="headerlink" href="#module-core" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
+  <div class="section" id="welcome-to-molecular-graph-theory-s-documentation">
+<h1>Welcome to Molecular Graph Theory's documentation!<a class="headerlink" href="#welcome-to-molecular-graph-theory-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>In molecular graph theory, edges that connect the nodes of amino acid residues are calculated from atomic fluctuations.
+The adjacency matrix (A) and the degree matrix (D) of the weighted graph are also defined based on the calculated edges.
+The molecular graph was then characterized by analyzing the unoriented Laplacian matrix, $(K=A+D)$.
+We showed that this framework can be used to effectively dissect the inter-reside couplings due to backbone-backbone,
+backbone-sidechain, and sidechain-sidechain interactions, hence revealing the mechanical architecture of a protein structure.
+We also analyze the functional implications of the MGT in extracting allosteric communication and functionally important residues in proteins.</p>
+<div class="section" id="fluctuation-matching">
+<h2>Fluctuation Matching<a class="headerlink" href="#fluctuation-matching" title="Permalink to this headline">¶</a></h2>
+<p>Fluctuation matching is a process where the variances of bond fluctuations obtained from CG-ENM through
+normal mode analysis (NMA) and all-atom MD through trajectories are matched by adjusting the force constants in the ENM
+to reproduce the bond fluctuations observed in all-atom MD. The fluctuation matching results in force constant matrix of
+all CG bead interactions. The coupling strength is obtained by summing up the force constants of their respective CG
+sites. This coupling strength dataframe will be the input for <a class="reference internal" href="#core.BuildMG" title="core.BuildMG"><code class="xref py py-class docutils literal"><span class="pre">core.BuildMG</span></code></a>.</p>
+<p><a class="reference internal" href="#module-core" title="core"><code class="xref py py-mod docutils literal"><span class="pre">core</span></code></a> module consists of the base <a class="reference internal" href="#core.BuildMG" title="core.BuildMG"><code class="xref py py-class docutils literal"><span class="pre">core.BuildMG</span></code></a> class that builds the molecular graph from the fluctuogram
+data.</p>
+<span class="target" id="module-core"></span><dl class="class">
 <dt id="core.BuildMG">
 <em class="property">class </em><code class="descclassname">core.</code><code class="descname">BuildMG</code><span class="sig-paren">(</span><em>filename: str</em>, <em>ressep=3</em>, <em>splitMgt=None</em>, <em>segid=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.BuildMG" title="Permalink to this definition">¶</a></dt>
-<dd><p>Base class for loading Coupling strength dataframe.</p>
-<p>Creates a new <a class="reference internal" href="#core.BuildMG" title="core.BuildMG"><code class="xref py py-class docutils literal"><span class="pre">BuildMG</span></code></a> instance.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Base class for building Coupling strength dataframe.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">src.core</span> <span class="kn">import</span> <span class="n">BuildMG</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mgt</span> <span class="o">=</span> <span class="n">BuildMG</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;holo_pdz.txt&quot;</span><span class="p">,</span> <span class="n">ressep</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">splitMgt</span><span class="o">=</span><span class="s2">&quot;SS&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">mgt</span><span class="o">.</span><span class="n">mgt_mat</span><span class="p">())</span>
+
+<span class="go">          5         6         7         8         9</span>
+<span class="go">5  0.025300  0.022754  0.002543  0.000003  0.000000</span>
+<span class="go">6  0.022754  0.105062  0.068219  0.013300  0.000788</span>
+<span class="go">7  0.002543  0.068219  0.239772  0.086187  0.082822</span>
+<span class="go">8  0.000003  0.013300  0.086187  0.370769  0.271280</span>
+<span class="go">9  0.000000  0.000788  0.082822  0.271280  0.354890</span>
+</pre></div>
+</div>
+<p><code class="xref py py-func docutils literal"><span class="pre">__init__()</span></code> method docstring.
+Creates a new <a class="reference internal" href="#core.BuildMG" title="core.BuildMG"><code class="xref py py-class docutils literal"><span class="pre">BuildMG</span></code></a> instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>filename</strong> -- Name of the file to be loaded</li>
-<li><strong>ressep</strong> -- residue separation( &gt;= I,I + ressep), default is I,I+3</li>
+<li><strong>ressep</strong> -- residue separation( &gt;= I,I + ressep), (default=3)</li>
 </ul>
 </td>
 </tr>
@@ -162,7 +199,10 @@ SS - Sidechain-Sidehain Interactions</p>
 
 </dd></dl>
 
+<p><code class="xref py py-mod docutils literal"><span class="pre">MGTools</span></code> module consists of the base <code class="xref py py-class docutils literal"><span class="pre">MGTools</span></code> class that contains the tools for MGT analysis.</p>
+<p><code class="xref py py-mod docutils literal"><span class="pre">MGNetwork</span></code> module is comprised of network building functions of MGT.</p>
 <div class="toctree-wrapper compound">
+</div>
 </div>
 </div>
 <div class="section" id="indices-and-tables">
@@ -182,7 +222,10 @@ SS - Sidechain-Sidehain Interactions</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Welcome to Molecular Graph Theory's documentation!</a></li>
+<li><a class="reference internal" href="#">Welcome to Molecular Graph Theory's documentation!</a><ul>
+<li><a class="reference internal" href="#fluctuation-matching">Fluctuation Matching</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 <div class="relations">
