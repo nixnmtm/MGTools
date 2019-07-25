@@ -1,257 +1,128 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="English">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>Welcome to Molecular Graph Theory&#39;s documentation! &#8212; Molecular Graph Theory v3.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     'v3.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Core Modules of MGT" href="core.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
-  </head>
-  <body>
+  </head><body>
   
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="welcome-to-molecular-graph-theory-s-documentation">
 <h1>Welcome to Molecular Graph Theory's documentation!<a class="headerlink" href="#welcome-to-molecular-graph-theory-s-documentation" title="Permalink to this headline">¶</a></h1>
-<p>In molecular graph theory, edges that connect the nodes of amino acid residues are calculated from atomic fluctuations.
+<p>In molecular graph theory, edges that connect the nodes of amino acid residues are calculated from atomic fluctuations
+(obtained from fluctuation matching).
 The adjacency matrix (A) and the degree matrix (D) of the weighted graph are also defined based on the calculated edges.
-The molecular graph was then characterized by analyzing the unoriented Laplacian matrix, $(K=A+D)$.
+The molecular graph was then characterized by analyzing the unoriented Laplacian matrix, (K=A+D).
 We showed that this framework can be used to effectively dissect the inter-reside couplings due to backbone-backbone,
 backbone-sidechain, and sidechain-sidechain interactions, hence revealing the mechanical architecture of a protein structure.
 We also analyze the functional implications of the MGT in extracting allosteric communication and functionally important residues in proteins.</p>
-<div class="section" id="fluctuation-matching">
+<p>We eigenvalue decompose the K matrix as shown in <a class="reference internal" href="#equation-kmat">(1)</a> and calculate persistance of each mode to capture important residues.</p>
+<div class="math" id="equation-kmat">
+<p><span class="eqno">(1)<a class="headerlink" href="#equation-kmat" title="Permalink to this equation">¶</a></span><img src="_images/math/533744d503a31d03db0e5d08909e4ab3565e76c6.png" alt="\mathbf{K_{ij}  = \sum_{\alpha=1}^{N}{\lambda_{\alpha} U^{\alpha}_i U^{\alpha}_j}}"/></p>
+</div><div class="section" id="fluctuation-matching">
 <h2>Fluctuation Matching<a class="headerlink" href="#fluctuation-matching" title="Permalink to this headline">¶</a></h2>
 <p>Fluctuation matching is a process where the variances of bond fluctuations obtained from CG-ENM through
 normal mode analysis (NMA) and all-atom MD through trajectories are matched by adjusting the force constants in the ENM
 to reproduce the bond fluctuations observed in all-atom MD. The fluctuation matching results in force constant matrix of
 all CG bead interactions. The coupling strength is obtained by summing up the force constants of their respective CG
-sites. This coupling strength dataframe will be the input for <a class="reference internal" href="#core.BuildMG" title="core.BuildMG"><code class="xref py py-class docutils literal"><span class="pre">core.BuildMG</span></code></a>.</p>
-<p><a class="reference internal" href="#module-core" title="core"><code class="xref py py-mod docutils literal"><span class="pre">core</span></code></a> module consists of the base <a class="reference internal" href="#core.BuildMG" title="core.BuildMG"><code class="xref py py-class docutils literal"><span class="pre">core.BuildMG</span></code></a> class that builds the molecular graph from the fluctuogram
-data.</p>
-<span class="target" id="module-core"></span><dl class="class">
-<dt id="core.BuildMG">
-<em class="property">class </em><code class="descclassname">core.</code><code class="descname">BuildMG</code><span class="sig-paren">(</span><em>filename: str</em>, <em>ressep=3</em>, <em>splitMgt=None</em>, <em>segid=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.BuildMG" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Base class for building Coupling strength dataframe.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"></td>
-</tr>
-</tbody>
-</table>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">src.core</span> <span class="kn">import</span> <span class="n">BuildMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mgt</span> <span class="o">=</span> <span class="n">BuildMG</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;holo_pdz.txt&quot;</span><span class="p">,</span> <span class="n">ressep</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">splitMgt</span><span class="o">=</span><span class="s2">&quot;SS&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">mgt</span><span class="o">.</span><span class="n">mgt_mat</span><span class="p">())</span>
-
-<span class="go">          5         6         7         8         9</span>
-<span class="go">5  0.025300  0.022754  0.002543  0.000003  0.000000</span>
-<span class="go">6  0.022754  0.105062  0.068219  0.013300  0.000788</span>
-<span class="go">7  0.002543  0.068219  0.239772  0.086187  0.082822</span>
-<span class="go">8  0.000003  0.013300  0.086187  0.370769  0.271280</span>
-<span class="go">9  0.000000  0.000788  0.082822  0.271280  0.354890</span>
-</pre></div>
-</div>
-<p><code class="xref py py-func docutils literal"><span class="pre">__init__()</span></code> method docstring.
-Creates a new <a class="reference internal" href="#core.BuildMG" title="core.BuildMG"><code class="xref py py-class docutils literal"><span class="pre">BuildMG</span></code></a> instance.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>filename</strong> -- Name of the file to be loaded</li>
-<li><strong>ressep</strong> -- residue separation( &gt;= I,I + ressep), (default=3)</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<p>:type int
-:param splitMgt: split mgt into BB or BS or SS
-:type str
-:param segid: segment id to analyze, if not mentioned all segid is used
-:type str</p>
-<dl class="method">
-<dt id="core.BuildMG.load_table">
-<code class="descname">load_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="headerlink" href="#core.BuildMG.load_table" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load Coupling Strength DataFrame
-:param verbose: verbosity
-:return: Structured coupling strength DataFrame</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.BuildMG.mgt_mat">
-<code class="descname">mgt_mat</code><span class="sig-paren">(</span><em>segid=None</em>, <em>ressep=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.BuildMG.mgt_mat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Build MGT Matrix</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>segid</strong> -- input segment id</li>
-<li><strong>ressep</strong> -- input residue separation</li>
-<li><strong>segsplit</strong> -- True: split matrix based on segids(ie. if 2 segids present, list of 2 dataframes are returned)
-False: A single matrix with inter- &amp; intra- segement interactions is returned</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">MGT dataframe</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.BuildMG.sepres">
-<code class="descname">sepres</code><span class="sig-paren">(</span><em>table: object = None</em>, <em>ressep: object = None</em><span class="sig-paren">)</span> &#x2192; object<a class="headerlink" href="#core.BuildMG.sepres" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>table</strong> -- table for sequence separation</li>
-<li><strong>ressep</strong> -- sequence separation to include (eg.  &gt;= I,I + ressep), default is I,I+3)</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">DataFrame after separation</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.BuildMG.splitSS">
-<code class="descname">splitSS</code><span class="sig-paren">(</span><em>df: pandas.core.frame.DataFrame = None</em>, <em>write: bool = False</em>, <em>prefix: str = None</em><span class="sig-paren">)</span> &#x2192; tuple<a class="headerlink" href="#core.BuildMG.splitSS" title="Permalink to this definition">¶</a></dt>
-<dd><p>Split based on secondary structures.
-BB - Backbone-Backbone Interactions
-BS - Backbone-Sidechain Interactions
-SS - Sidechain-Sidehain Interactions</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>df</strong> -- Dataframe to split. If None, df initialized during class instance is taken</li>
-<li><strong>write</strong> -- write after splitting</li>
-<li><strong>prefix</strong> -- prefix for writing file</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">tuple of split DataFrames</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.BuildMG.sum_mean">
-<code class="descname">sum_mean</code><span class="sig-paren">(</span><em>table=None</em>, <em>segid=None</em>, <em>ressep=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.BuildMG.sum_mean" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the sum, mean and standard deviation of residues based on the self.grouping</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>table</strong> -- DataFrame to sum</li>
-<li><strong>segid</strong> -- segment id</li>
-<li><strong>ressep</strong> -- Number of residues separation</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">list of DataFrames [sum, mean, stand deviation]</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
-<p><code class="xref py py-mod docutils literal"><span class="pre">MGTools</span></code> module consists of the base <code class="xref py py-class docutils literal"><span class="pre">MGTools</span></code> class that contains the tools for MGT analysis.</p>
-<p><code class="xref py py-mod docutils literal"><span class="pre">MGNetwork</span></code> module is comprised of network building functions of MGT.</p>
+sites. This coupling strength dataframe will be the input for <a class="reference internal" href="core.html#core.BuildMG" title="core.BuildMG"><code class="xref py py-class docutils literal notranslate"><span class="pre">core.BuildMG</span></code></a>.</p>
 <div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core Modules of MGT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Tools used in MGT Analysis</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="network_utils.html">Network tools used in MGT</a><ul class="simple">
+</ul>
+</li>
+</ul>
 </div>
 </div>
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
-<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
 </div>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Welcome to Molecular Graph Theory's documentation!</a><ul>
-<li><a class="reference internal" href="#fluctuation-matching">Fluctuation Matching</a></li>
+<h1 class="logo"><a href="#">Molecular Graph Theory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core Modules of MGT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Tools used in MGT Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="network_utils.html">Network tools used in MGT</a></li>
 </ul>
-</li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
-</ul>
+
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="core.html" title="next chapter">Core Modules of MGT</a></li>
   </ul></li>
 </ul>
 </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/index.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
         </div>
       </div>
       <div class="clearer"></div>
@@ -260,8 +131,8 @@ SS - Sidechain-Sidehain Interactions</p>
       &copy;2019, Nixon Raj, nix02g@nctu.edu.tw.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
       <a href="_sources/index.rst.txt"
