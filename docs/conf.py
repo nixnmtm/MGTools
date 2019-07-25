@@ -5,11 +5,12 @@
 # http://www.sphinx-doc.org/en/master/config
 
 # -- Path setup --------------------------------------------------------------
-import sys
 import os
+import sys
 
-sys.path.insert(0, os.path.abspath('../src/'))
 sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../src/'))
+
 # -- Project information -----------------------------------------------------
 
 project = 'Molecular Graph Theory'
@@ -21,7 +22,7 @@ release = 'v3.0'
 
 # -- General configuration ---------------------------------------------------
 
-extensions = ['sphinx.ext.autodoc']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.imgmath']
 source_suffix = '.rst'
 master_doc = 'index'
 pygments_style = 'sphinx'
