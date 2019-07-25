@@ -6,7 +6,9 @@ import logging
 
 
 class ProTools(object):
-
+    """
+    Tools for protein structure analysis
+    """
     def __init__(self, pdbid):
         self.dir_name = "./PDB/"
         self.pdbid = pdbid
@@ -34,6 +36,11 @@ class ProTools(object):
             pdbl.retrieve_pdb_file(pdbid, pdir='PDB')
 
     def n_residues(self, segid=None):
+        """
+
+        :param segid:
+        :return:
+        """
         if segid is None:
             total_res = dict()
             segs = self.univ.segments.segids
