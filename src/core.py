@@ -3,7 +3,6 @@ import os
 import logging
 import numpy as np
 
-
 logging.basicConfig(level=logging.INFO)
 
 
@@ -25,8 +24,8 @@ class BuildMG(object):
         7  0.002543  0.068219  0.239772  0.086187  0.082822
         8  0.000003  0.013300  0.086187  0.370769  0.271280
         9  0.000000  0.000788  0.082822  0.271280  0.354890
-
     """
+
     def __init__(self, filename: str, ressep=3, splitMgt=None, segid=None):
         """
         :func:`__init__` method docstring.
@@ -182,6 +181,11 @@ class BuildMG(object):
 
         """
         def mgtcore(df):
+            """
+
+            :param df:
+            :return:
+            """
             #tmp = df.copy(deep=True)
             diag_val = df.groupby("resI").sum().drop("resJ", axis=1).values.ravel()
             ref_mat = df.drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
