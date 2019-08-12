@@ -91,22 +91,21 @@ def annotate_modes(eigen_vec, modes, ndx, aa):
                     res[m][1] = n
     return res
 
-
 def get_kbHmodes(mean_table, eig_vec, kBcut=5, resnoIndexAdd=None, Npos=None):
 
     """
     Get eigenmodes having inter-residue coupling strength greater than 5 kcal/mol/A^2
 
-    :param mean_table: the mean table used for creating MGT
-    :param eig_vec: Eigen vectors
-    :param kBcut: coupling strength(kB) cutoff to select interactions greater than it.
-    :param resnoIndexAdd: Number to be added with index to match the residue numbering.
+    :param: mean_table: the mean table used for creating MGT
+    :param: eig_vec: Eigen vectors
+    :param: kBcut: coupling strength(kB) cutoff to select interactions greater than it.
+    :param: resnoIndexAdd: Number to be added with index to match the residue numbering.
                            (ex): For PDZ3, 0+301, as the index starts frßom 0 and resno starts from 301
 
     :return: Dictionary of modes and it details and List of Modes having inter-residue kB greter than kBCut
 
     """
-
+    import itertools
     mode_details = list()
     ddd = mean_table.copy(deep=True)  # input M
     ddd = ddd.reset_index()
@@ -114,7 +113,7 @@ def get_kbHmodes(mean_table, eig_vec, kBcut=5, resnoIndexAdd=None, Npos=None):
     ddd = ddd.set_index(["resI", "resJ"])
     for i in range(Npos):
         elem_ndx = np.asarray(
-            np.where(eig_vec[:, i] * eig_vec[:, i] > 0.05))  # index of eigvec elements with weight gt 0.05
+            np.where(eig_vec[:, i] * eig_vec[:, i] > 0.02))  # index of eigvec elements with weight gt 0.05
         elem_ndx = elem_ndx[0]
         # print("Mode {}".format(i+1))
         for j in itertools.combinations(elem_ndx, 2):  # iterate throught combinations of the elements obtained
@@ -126,18 +125,18 @@ def get_kbHmodes(mean_table, eig_vec, kBcut=5, resnoIndexAdd=None, Npos=None):
             if residue_I in ddd.index.get_level_values("resI"):
                 rI = ddd.loc[j[0] + resnoIndexAdd]  # resI selected
                 if residue_J in rI.index.get_level_values("resJ"):  # if resJ in selected resI
-                    if (rI.loc[residue_J].values > kBcut):  # if the kB of pair resI and resJ gt 5 kcal/mol/A2
+                    if rI.loc[residue_J].values > kBcut:  # if the kB of pair resI and resJ gt 5 kcal/mol/A2
                         # print("residue:{},{}: {}\n".format(j[0]+301, j[1]+301, rI.loc[j[1]+301].values[0]))
                         # if i+1 not in mmm:
-                        mode_res["mode"] = i + 1
-                        mode_res["I"] = residue_I
-                        mode_res["J"] = residue_J
-                        mode_res["kb"] = rI.loc[residue_J].values[0]
-                        mode_res["weightI"] = (eig_vec[:, i] * eig_vec[:, i])[residue_I - resnoIndexAdd]
-                        mode_res["weightJ"] = (eig_vec[:, i] * eig_vec[:, i])[residue_J - resnoIndexAdd]
+                        mode_res[i + 1] = dict()
+                        mode_res[i + 1]["I"] = residue_I
+                        mode_res[i + 1]["J"] = residue_J
+                        mode_res[i + 1]["kb"] = rI.loc[residue_J].values[0]
+                        mode_res[i + 1]["weightI"] = (eig_vec[:, i] * eig_vec[:, i])[residue_I - resnoIndexAdd]
+                        mode_res[i + 1]["weightJ"] = (eig_vec[:, i] * eig_vec[:, i])[residue_J - resnoIndexAdd]
                         if not mode_res in mode_details:
                             mode_details.append(mode_res)
-    modes = [d["mode"] for d in mode_details if "mode" in d]
+    modes = np.unique([k for m in mode_details for k, v in m.items()])
     return mode_details, modes
 
 
