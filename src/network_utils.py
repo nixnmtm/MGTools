@@ -1,9 +1,11 @@
 from itertools import combinations
+import matplotlib
 import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
 import numpy as np
 import inspect
+
 
 
 class MGNetwork(object):
@@ -106,7 +108,34 @@ class MGNetwork(object):
         plt.title("MGT Network Visualization")
         plt.show()
 
-    def draw_sub_protein_graph(self, G, resids, col, kbcut=0., intra=False, prefix=None):
+    def get_interacting_edges(self, G, nodes, kbcut, intra=False):
+        """
+        Get edgelists for a set of nodes, if interactions are present
+
+        :param G: graph object
+        :param nodes: list of nodes to get combinations
+        :param kbcut: kb cut off
+        :param intra: if True: get only intra interacting edges for given nodes
+                        False: get all interacting edges of the given nodes
+
+        """
+        edgelist = list()
+        if intra:
+            for x in combinations(nodes, 2):
+                x = (str(x[0]), str(x[1]))
+                if x in G.edges():
+                    if G.get_edge_data(x[0], x[1])["weight"] > kbcut:
+                        edgelist.append(x)
+        else:
+            for i in nodes:
+                for j in G.nodes():
+                    x = (str(i), str(j))
+                    if x in G.edges():
+                        if G.get_edge_data(x[0], x[1])["weight"] > kbcut:
+                            edgelist.append(x)
+        return edgelist
+
+    def draw_sub_protein_graph(self, G, resids, col, res_overlap=None, kbcut=0., intra=False, prefix=None):
         """
         Draw 2D protein graph using NetworkX, only interactions between given resids > kbcut.
 
@@ -130,9 +159,12 @@ class MGNetwork(object):
         :type prefix: string
 
         """
-        nx.draw_networkx_nodes(G, pos=xypos(G), node_size=500, edgecolors='k', alpha=0.5)
-        nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=resids, node_size=500,
+        nx.draw_networkx_nodes(G, pos=xypos(G), node_size=750, edgecolors='k', alpha=0.5)
+        nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=resids, node_size=750,
                                node_color=col, edgecolors='k', alpha=1)
+        if not res_overlap is None:
+            nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=res_overlap, node_size=2000,
+                                   node_color=col, edgecolors='k', alpha=1)
         # seperate edgelists
         backbone = [(u, v) for (u, v, d) in G.edges(data=True) if d['kind'] == 'backbone']
         drawedges = self.get_interacting_edges(G, resids, kbcut, intra=intra)
@@ -143,11 +175,38 @@ class MGNetwork(object):
         # plotting
         nx.draw_networkx_edges(G, pos=xypos(G), edgelist=backbone, width=2, edge_color="lightgray")
         edges = nx.draw_networkx_edges(G, pos=xypos(G), edgelist=drawedges, edge_color=weights,
-                                       width=4, edge_cmap=plt.cm.cool)
-        nx.draw_networkx_labels(G, pos=xypos(G), font_size=12)
-        plt.colorbar(edges)
+                                       width=4, edge_cmap=plt.cm.cool, edge_vmin=1.0)
+
+        # here also we can change the node label using labels argument
+        # (check networkx documentation for draw_networkx_labels)
+        if not res_overlap is None:
+            norm_label = {}
+            overlap_label = {}
+            for node in G.nodes():
+                if node not in res_overlap:
+                    norm_label[node] = node
+                else:
+                    overlap_label[node] = node
+            overlap_node_edges = self.get_interacting_edges(G, overlap_label, kbcut, intra=intra)
+            overlap_weights = [float(G.get_edge_data(n1, n2)["weight"]) for (n1, n2) in overlap_node_edges]
+            nx.draw_networkx_edges(G, pos=xypos(G),
+                                   edgelist=overlap_node_edges, edge_color=overlap_weights,
+                                   width=7, style='dotted',
+                                   edge_cmap=plt.cm.cool, edge_vmin=1.0, edge_vmax=np.asarray(weights).max())
+            nx.draw_networkx_labels(G, pos=xypos(G), labels=norm_label, font_size=12)
+            nx.draw_networkx_labels(G, pos=xypos(G), labels=overlap_label, font_size=14, font_weight='bold')
+        else:
+            nx.draw_networkx_labels(G, pos=xypos(G), font_size=12)
+
+        cb = plt.colorbar(edges)
+        cb.set_label(label=r'Coupling Strength''\n''$kcal/mol/A^2$', weight='bold')
+        ax = cb.ax
+        cblabel = ax.yaxis.label
+        cb.ax.tick_params(axis='y', labelsize=30)
+        font = matplotlib.font_manager.FontProperties(family='arial', size=30)
+        cblabel.set_font_properties(font)
         if prefix is None:
-            plt.title("MGT Network Visualization")
+            pass
         else:
             plt.title("{} Network Visualization".format(prefix))
         plt.show()
