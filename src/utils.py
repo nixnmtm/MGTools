@@ -3,9 +3,9 @@ import numpy as np
 import logging
 from core import BuildMG
 import matplotlib.pyplot as plt
-import itertools
+import seaborn as sns
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 
 def t_eigenVect(stab, SS=False):
@@ -62,10 +62,106 @@ def hitcov(sca_res, cs_res):
     :return: hitrate and coverage
 
     """
+    hit_dict = dict()
     common = np.intersect1d(sca_res, cs_res).size
     hit = np.float(common) / np.float(cs_res.size)
     cov = np.float(common) / np.float(sca_res.size)
-    return hit, cov
+    hit_dict["hitrate"] = hit
+    hit_dict["covrate"] = cov
+    hit_dict["common"] = np.intersect1d(sca_res, cs_res)
+    hit_dict["size"] = common
+
+    return hit_dict
+
+
+def plot_eigpers(eigval, pers, cdf_data=None, eigcut="outliers", figsize=(9, 5), tick_fontsize=20,
+                 label_fontsize=32, show_cutoff=True, save_fig=False):
+    """
+    Eigenvalue boxplot, persistance vs eigenvalue scatter plot and persistance distribution in a single plot and
+    cutoffs shown
+
+    :param eigval: 1d array of eigenvalues
+    :param pers: the persitance values to plot
+    :param cdf_data: dictionary of cdf name and cdf cutoff
+    :param eigcut: the eigenvalue cutoff to use
+    :param figsize: size of fig
+    :param tick_fontsize:
+    :param label_fontsize:
+    :param show_cutoff: show cutoff lines
+    :param save_fig: save fig
+    :return: Plot figure
+
+    .. example
+    >>> plot_eigpers(val, persistance_mean, cdf_dict)
+
+    """
+
+    from matplotlib.ticker import FormatStrFormatter
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+    sns.set(style="ticks")
+    f2, ax_scat2 = plt.subplots(1, sharex=True, figsize=figsize)
+    sns.scatterplot(eigval, pers, ax=ax_scat2)
+
+    # Append new plots
+    divider = make_axes_locatable(ax_scat2)
+
+    # Add plot in right
+    axHisty = divider.append_axes("right", 1.5, pad=0.1, sharey=ax_scat2)
+    axHisty.tick_params(labelleft=False, left=False, labelsize=tick_fontsize,
+                        bottom=True, labelbottom=True, top=False, labeltop=False)
+    axHisty.set_xlabel("counts", fontsize=label_fontsize)
+
+    # add plot above eighist
+    axBox = divider.append_axes("top", 0.5, pad=0.1)
+    axBox.tick_params(labelleft=False, left=False, labelsize=tick_fontsize,
+                      bottom=False, labelbottom=False, top=False, labeltop=False)
+
+    ax_scat2.set_ylabel(r"$P_i$", fontsize=label_fontsize)
+    ax_scat2.set_xlabel("Eigenvalues", fontsize=label_fontsize)
+    ax_scat2.tick_params(labelsize=tick_fontsize)
+    ax_scat2.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+
+    # Plot pers distribution with cutoff
+    if cdf_data:
+        cdf_cut = max([v for k, v in cdf_data.items()])
+        cdf_name = [k for k, v in cdf_data.items()][0]
+        sns.distplot(pers, bins=max(20, int(len(eigval) / 10)), vertical=True, norm_hist=True,
+                     kde=False, fit=eval("scipy.stats." + cdf_name), ax=axHisty, color='k')
+    else:
+        logging.WARN("CDF data not provided for persistance cutoff")
+
+    # plot eigenvalue box plot
+    sns.boxplot(eigval, ax=axBox)
+
+    if show_cutoff:
+        # Get cdf details
+        if cdf_data:
+            # Add pers cutoff lines
+            axHisty.axhline(cdf_cut, color='g', linestyle='--')
+            ax_scat2.axhline(cdf_cut, color='g', linestyle='--')
+
+        # retrieve eigval cutoff from boxplot
+        Q3 = np.quantile(eigval, 0.75)
+        max_whisker = Q3 + (1.5 * scipy.stats.iqr(eigval))  # Q3+1.5IQR
+        maxwhisk = eigval[eigval <= max_whisker].max()
+        if eigcut == "outliers":
+            ax_scat2.axvline(maxwhisk, color='r', linestyle='--')
+            axBox.axvline(maxwhisk, color='r', linestyle='--')
+        if eigcut == "Q3":
+            ax_scat2.axvline(Q3, color='r', linestyle='--')
+            axBox.axvline(Q3, color='r', linestyle='--')
+
+        for a in range(len(eigval)):
+            if pers[a] > cdf_cut and eigval[a] > maxwhisk:
+                ax_scat2.annotate(str(a + 1), xy=(eigval[a], pers[a]), fontsize=14)
+    plt.tight_layout()
+    plt.show()
+    if save_fig:
+        filename = input("Please enter filename: ")
+        if len(filename) < 1:
+            filename = "eigpers"
+        f2.savefig("./" + filename + ".png", dpi=300)
 
 
 def annotate_modes(eigen_vec, modes, ndx, aa):
@@ -125,7 +221,7 @@ def get_kbHmodes(mean_table, eig_vec, kBcut=5, resnoIndexAdd=None, Npos=None):
             if residue_I in ddd.index.get_level_values("resI"):
                 rI = ddd.loc[j[0] + resnoIndexAdd]  # resI selected
                 if residue_J in rI.index.get_level_values("resJ"):  # if resJ in selected resI
-                    if rI.loc[residue_J].values > kBcut:  # if the kB of pair resI and resJ gt 5 kcal/mol/A2
+                    if (rI.loc[residue_J].values > kBcut):  # if the kB of pair resI and resJ gt 5 kcal/mol/A2
                         # print("residue:{},{}: {}\n".format(j[0]+301, j[1]+301, rI.loc[j[1]+301].values[0]))
                         # if i+1 not in mmm:
                         mode_res[i + 1] = dict()
@@ -188,6 +284,52 @@ def eigenVect(kmat):
         if np.sign(np.mean(eigenVectors[:, k])) != 0:
             eigenVectors[:, k] = np.sign(np.mean(eigenVectors[:, k])) * eigenVectors[:, k]
     return eigenValues, eigenVectors
+
+
+def eigval_distplot(data, xlabel=None, ylabel=None, title=None, figsize=(9, 8),
+                      bins=None, eigcut="outliers", fontsize=16):
+    """
+    Plot Boxplot and histogram distribution of eigenvalues
+
+    :param data: 1-d data array (eigenvalues)
+    :param xlabel: xlabel
+    :param title: title
+    :param figsize: size of fig (default (9,8))
+    :param bins: number of bins (default None / auto)
+    :param eigcut: plot vline (max whisker, min whisker, Q3, Q1)
+    :param fontsize: default:16
+
+    .. example
+    >>> histogram_boxplot(val, xlabel="Eigenvalues", bins=20)
+    """
+
+    from matplotlib.ticker import FormatStrFormatter
+    sns.set(style="ticks")
+    f2, (ax_box2, ax_hist2) = plt.subplots(2, sharex=True, gridspec_kw={"height_ratios": (.15, .85)}, figsize=figsize)
+    sns.boxplot(data, ax=ax_box2)
+    hist_kws = {"color": "k", 'edgecolor': 'black', 'alpha': 1.0}
+    sns.distplot(data, ax=ax_hist2, bins=bins, hist_kws=hist_kws) if bins else sns.distplot(data, ax=ax_hist2)
+
+    # label and ticks params
+    if xlabel: ax_hist2.set_xlabel(xlabel=xlabel, fontsize=fontsize)
+    if ylabel: ax_hist2.set_ylabel(ylabel=ylabel, fontsize=fontsize)
+    ax_hist2.tick_params(labelsize=fontsize - 10)
+    ax_hist2.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    if title: ax_box2.set(title=title)
+
+    # get the point to draw cutoff outline
+    Q3 = np.quantile(data, 0.75)
+    max_whisker = Q3 + (1.5 * scipy.stats.iqr(data))  # Q3+1.5IQR
+    maxwhisk = data[data <= max_whisker].max()
+    if eigcut == "outliers":
+        ax_box2.axvline(maxwhisk, color='r', linestyle='--')
+        ax_hist2.axvline(maxwhisk, color='r', linestyle='--')
+    if eigcut == "Q3":
+        ax_box2.axvline(Q3, color='r', linestyle='--')
+        ax_hist2.axvline(Q3, color='r', linestyle='--')
+    plt.tight_layout()
+    plt.show()
+    return Q3, maxwhisk
 
 
 #########################################################################################
@@ -350,7 +492,7 @@ class CheckDistribution(object):
 
     ########################################################################################
 
-    def plot(self, fcts, data, pd_cut=0.95):
+    def plot(self, fcts, data, pd_cut=0.90, xlabel=None, ylabel=None, fontsize=16, figsize=None):
         """
         :param fcts: distribution to plot
         :param data: data to check
@@ -359,7 +501,15 @@ class CheckDistribution(object):
         :return plots image and returns pcut values
         """
         # plot data
-        plt.hist(data, normed=True, bins=max(10, int(len(data) / 10)), color='k')
+        from matplotlib.ticker import FormatStrFormatter
+        font = {'family': 'Arial',
+                'weight': 'bold',
+                'size': 16
+                }
+        sns.set(style="ticks")
+        f2, ax_hist2 = plt.subplots(1, figsize=figsize)
+        hist_kws = {"color": "k", 'edgecolor': 'black', 'alpha': 1.0}
+        sns.distplot(data, ax=ax_hist2, bins=max(10, int(len(data) / 10)), hist_kws=hist_kws, kde=False, norm_hist=True)
 
         # plot fitted probability
         for i in range(len(fcts)):
@@ -380,8 +530,15 @@ class CheckDistribution(object):
             p_cut = np.round(x[x_pos + tmp], 2)
             self.pcuts[fct] = p_cut
             plt.axvline(p_cut, color='r', linestyle='--')
-        plt.legend(loc='best', frameon=False)
+
+        # label and ticks params
+        if xlabel: ax_hist2.set_xlabel(xlabel=xlabel, fontsize=fontsize)
+        if ylabel: ax_hist2.set_ylabel(ylabel=ylabel, fontsize=fontsize)
+        ax_hist2.tick_params(labelsize=fontsize - 10)
+        ax_hist2.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        ax_hist2.legend(loc='best', frameon=False)
         plt.title("Top " + str(len(fcts)) + " Results")
+        plt.tight_layout()
         plt.show()
         return self.pcuts
 
