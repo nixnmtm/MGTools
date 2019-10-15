@@ -27,7 +27,7 @@ class BuildMG(object):
 
     """
 
-    def __init__(self, filename: str, ressep=3, splitMgt=None, segid=None):
+    def __init__(self, filename: str, ressep=3, segid=None, splitMGT=True):
         """
         :func:`__init__` method docstring.
         Creates a new :class:`BuildMG` instance.
@@ -47,8 +47,8 @@ class BuildMG(object):
         self.grouping = ["segidI", "resI", "segidJ", "resJ"]
         self._index = ["segidI", "resI", "I", "segidJ", "resJ", "J"]
         self.ressep = ressep
-        self.splitMgt = splitMgt
         self.segid = segid
+        self.splitMGT = splitMGT
 
     def load_table(self) -> pd.DataFrame:
         """
@@ -70,7 +70,7 @@ class BuildMG(object):
         logging.info("File loaded.")
         return table
 
-    def splitSS(self, df: pd.DataFrame = None, write: bool = False) -> dict:
+    def splitSS(self, write: bool = False) -> dict:
         """
         Split based on secondary structures.
 
@@ -84,12 +84,13 @@ class BuildMG(object):
 
         """
         # split table into three tables based on BB,BS and SS
-        sstable = dict()
+        if not self.splitMGT:
+            raise ValueError("splitMGT must be True to run splitSS method")
+            exit(1)
 
-        if df is None:
-            tmp = self.table.copy(deep=True)
-        else:
-            tmp = df.copy(deep=True)
+        sstable = dict()
+        tmp = self.table.copy(deep=True)
+
         try:
             # BACKBONE-BACKBONE
             sstable['BB'] = tmp[((tmp["I"] == 'N') | (tmp["I"] == 'O') | (tmp["I"] == 'ions')) \
@@ -115,17 +116,15 @@ class BuildMG(object):
         except Exception as e:
             logging.warning("Error in splitting secondary structures --> {}".format(str(e)))
 
-    def sepres(self, table: object = None, ressep: object = None) -> object:
+    def sepres(self, table) -> object:
         """
         :param table: table for sequence separation
         :param ressep: sequence separation to include (eg.  >= I,I + ressep), default is I,I+3)
         :return: DataFrame after separation
         """
-        if table is None:
-            table = self.table
-        if ressep is None:
-            ressep = self.ressep
-        logging.info("DataFrame is populated with ressep: {}".format(ressep))
+
+        ressep = self.ressep
+        # logging.info("DataFrame is populated with ressep: {}".format(ressep))
         tmp = table[table["segidI"] == table["segidJ"]]
         tmp = tmp[
             (tmp["resI"] >= tmp["resJ"] + ressep) |
@@ -135,7 +134,7 @@ class BuildMG(object):
         df = pd.concat([tmp, diff], axis=0)
         return df
 
-    def sum_mean(self, table=None, segid=None, ressep=None):
+    def table_sum(self):
         """
         Returns the sum, mean and standard deviation of residues based on the self.grouping
 
@@ -144,30 +143,22 @@ class BuildMG(object):
         :param ressep: Number of residues separation
         :return: list of DataFrames [sum, mean, stand deviation]
         """
-        if table is None:
-            if self.splitMgt is not None:
-                sstable = self.splitSS()
-                tab = self.splitMgt
-                if tab == 'BB':
-                    tab_sep = self.sepres(table=sstable['BB'])
-                elif tab == 'BS':
-                    tab_sep = self.sepres(table=sstable['BS'])
-                elif tab == 'SS':
-                    tab_sep = self.sepres(table=sstable['SS'])
-                else:
-                    logging.warning("splitMGT not recognized")
-            else:
-                tab_sep = self.sepres(ressep)
+        smtable = dict()
+        sstable = self.splitSS()
+        sstable["full"] = self.table
+        keys = ["BB", "BS", "SS", "full"]
+        for key in keys:
+            tmp = self.sepres(table=sstable[key])
+            smtable[key] = tmp.groupby(self.grouping).sum()
+            if self.segid is not None:
+                mask = (smtable[key].index.get_level_values("segidI") == self.segid) & \
+                       (smtable[key].index.get_level_values("segidJ") == self.segid)
+                smtable[key] = smtable[key][mask]
+        popped = smtable.pop("full")
+        if self.splitMGT:
+            return smtable
         else:
-            tab_sep = self.sepres(table, ressep)
-
-        if segid is not None:
-            logging.info("only segid: {} is populated".format(segid))
-            tab_sep = tab_sep[(tab_sep["segidI"] == segid) & (tab_sep["segidJ"] == segid)]
-        tab_sum = tab_sep.groupby(self.grouping).sum()
-        tab_mean = tab_sum.mean(axis=1)
-        tab_std = tab_sum.std(axis=1)
-        return tab_sum, tab_mean, tab_std
+            return popped
 
     def mgt_mat(self, segid=None, ressep=None):
         """
