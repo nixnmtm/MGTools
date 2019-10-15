@@ -136,12 +136,11 @@ class BuildMG(object):
 
     def table_sum(self):
         """
-        Returns the sum, mean and standard deviation of residues based on the self.grouping
+        Returns the sum table based on the self.grouping
 
-        :param table: DataFrame to sum
-        :param segid: segment id
-        :param ressep: Number of residues separation
-        :return: list of DataFrames [sum, mean, stand deviation]
+        :return: splitMGT==True : dict of tables with keys ["BB", "BS", "SS"]
+                 splitMGT==False : sum of complete table
+
         """
         smtable = dict()
         sstable = self.splitSS()
