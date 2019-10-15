@@ -15,7 +15,7 @@ class BuildMG(object):
     .. code-block:: python
 
         >>> from src.core import BuildMG
-        >>> mgt = BuildMG(filename=holo_pdz.txt.bz2bz2", ressep=1, splitMgt="SS")
+        >>> mgt = BuildMG(filename="holo_pdz.txt.bz2", ressep=1, splitMgt="SS")
         >>> print(mgt.mgt_mat())
 
                   5         6         7         8         9
