@@ -15,7 +15,7 @@ class BuildMG(object):
     .. code-block:: python
 
         >>> from src.core import BuildMG
-        >>> mgt = BuildMG(filename="holo_pdz.txt", ressep=1, splitMgt="SS")
+        >>> mgt = BuildMG(filename=holo_pdz.txt.bz2bz2", ressep=1, splitMgt="SS")
         >>> print(mgt.mgt_mat())
 
                   5         6         7         8         9
@@ -24,6 +24,7 @@ class BuildMG(object):
         7  0.002543  0.068219  0.239772  0.086187  0.082822
         8  0.000003  0.013300  0.086187  0.370769  0.271280
         9  0.000000  0.000788  0.082822  0.271280  0.354890
+
     """
 
     def __init__(self, filename: str, ressep=3, splitMgt=None, segid=None):
@@ -52,13 +53,14 @@ class BuildMG(object):
     def load_table(self) -> pd.DataFrame:
         """
         Load Coupling Strength DataFrame
-        :param verbose: verbosity
-        :return: Structured coupling strength DataFrame
+
+        :return: Processed Coupling Strength DataFrame
 
         """
         logging.info("Loading file: {} from {}".format(self.filename, self.input_path))
         _, fileext = os.path.splitext(self.filename)
-        if not (fileext[-3:] == "txt") or (fileext[-3:] == "bz2"):
+
+        if not (fileext[-3:] == "txt" or fileext[-3:] == "bz2"):
             logging.error("Please provide a appropriate file, with extension either txt or bz2")
         filepath = os.path.join(self.input_path, self.filename)
         os.path.exists(filepath)
@@ -68,49 +70,47 @@ class BuildMG(object):
         logging.info("File loaded.")
         return table
 
-    def splitSS(self, df: pd.DataFrame = None, write: bool = False, prefix: str = None) -> tuple:
+    def splitSS(self, df: pd.DataFrame = None, write: bool = False) -> dict:
         """
         Split based on secondary structures.
+
         BB - Backbone-Backbone Interactions
         BS - Backbone-Sidechain Interactions
         SS - Sidechain-Sidehain Interactions
 
         :param df: Dataframe to split. If None, df initialized during class instance is taken
         :param write: write after splitting
-        :param prefix: prefix for writing file
-        :return: tuple of split DataFrames
+        :return: dict of split DataFrames
 
         """
         # split table into three tables based on BB,BS and SS
+        sstable = dict()
+
         if df is None:
             tmp = self.table.copy(deep=True)
         else:
             tmp = df.copy(deep=True)
         try:
             # BACKBONE-BACKBONE
-            BB = tmp[((tmp["I"] == 'N') | (tmp["I"] == 'O') | (tmp["I"] == 'ions')) \
+            sstable['BB'] = tmp[((tmp["I"] == 'N') | (tmp["I"] == 'O') | (tmp["I"] == 'ions')) \
                       & ((tmp["J"] == 'N') | (tmp["J"] == 'O') | (tmp["J"] == 'ions'))]
 
             # BACKBONE-SIDECHAIN
             BS = tmp[((tmp["I"] == "N") | (tmp["I"] == 'O') | (tmp["I"] == "ions")) & (tmp["J"] == 'CB')]
             SB = tmp[(tmp["I"] == 'CB') & ((tmp["J"] == "N") | (tmp["J"] == 'O') | (tmp["J"] == "ions"))]
-            BB_side = pd.concat([BS, SB], axis=0, ignore_index=True)
+            sstable['BS'] = pd.concat([BS, SB], axis=0, ignore_index=True)
 
             # SIDECHAIN-SIDECHAIN
-            SS = tmp[(tmp["I"] == "CB") & (tmp["J"] == "CB")]
+            sstable['SS'] = tmp[(tmp["I"] == "CB") & (tmp["J"] == "CB")]
 
             # write the file, if needed
             if write:
-                if prefix is None:
-                    logging.error("prefix is not defined in write")
-                    exit(1)
-                else:
-                    # write the files in current directory
-                    BB.to_csv(prefix + "_" + "kb_BB.txt", header=True, sep=" ", index=False)
-                    BB_side.to_csv(prefix + "_" + "kb_BS.txt", header=True, sep=" ", index=False)
-                    SS.to_csv(prefix + "_" + "kb_SS.txt", header=True, sep=" ", index=False)
+                # write the files in current directory
+                sstable['BB'].to_csv("kb_BB.txt", header=True, sep=" ", index=False)
+                sstable['BS'].to_csv("kb_BS.txt", header=True, sep=" ", index=False)
+                sstable['SS'].to_csv("kb_SS.txt", header=True, sep=" ", index=False)
 
-            return BB, BB_side, SS
+            return sstable
 
         except Exception as e:
             logging.warning("Error in splitting secondary structures --> {}".format(str(e)))
@@ -146,14 +146,14 @@ class BuildMG(object):
         """
         if table is None:
             if self.splitMgt is not None:
-                (BB, BS, SS) = self.splitSS()
+                sstable = self.splitSS()
                 tab = self.splitMgt
                 if tab == 'BB':
-                    tab_sep = self.sepres(table=BB)
+                    tab_sep = self.sepres(table=sstable['BB'])
                 elif tab == 'BS':
-                    tab_sep = self.sepres(table=BS)
+                    tab_sep = self.sepres(table=sstable['BS'])
                 elif tab == 'SS':
-                    tab_sep = self.sepres(table=SS)
+                    tab_sep = self.sepres(table=sstable['SS'])
                 else:
                     logging.warning("splitMGT not recognized")
             else:
@@ -208,6 +208,7 @@ class BuildMG(object):
         else:
             _tab = tab.reset_index()
             segments = np.unique(_tab["segidI"].values)
+            print(segments)
             if len(segments) > 1:
                 dfs = list()
                 for seg in segments:

@@ -22,7 +22,32 @@ release = 'v3.0'
 
 # -- General configuration ---------------------------------------------------
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.imgmath']
+
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.githubpages',
+    # 'sphinxcontrib.napoleon', #   <-- add this entry...
+]
+
+# Napoleon settings               <-- and this section
+# napoleon_google_docstring = True
+# napoleon_numpy_docstring = True
+# napoleon_include_init_with_doc = False
+# napoleon_include_private_with_doc = False
+# napoleon_include_special_with_doc = False
+# napoleon_use_admonition_for_examples = False
+# napoleon_use_admonition_for_notes = False
+# napoleon_use_admonition_for_references = False
+# napoleon_use_ivar = False
+# napoleon_use_param = True
+# napoleon_use_rtype = True
+# napoleon_use_keyword = True
+
+#extensions = ['sphinx.ext.autodoc', 'sphinx.ext.imgmath']
 source_suffix = '.rst'
 master_doc = 'index'
 pygments_style = 'sphinx'

@@ -12,6 +12,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Core Modules of MGT" href="core.html" />
@@ -41,9 +42,9 @@ We showed that this framework can be used to effectively dissect the inter-resid
 backbone-sidechain, and sidechain-sidechain interactions, hence revealing the mechanical architecture of a protein structure.
 We also analyze the functional implications of the MGT in extracting allosteric communication and functionally important residues in proteins.</p>
 <p>We eigenvalue decompose the K matrix as shown in <a class="reference internal" href="#equation-kmat">(1)</a> and calculate persistance of each mode to capture important residues.</p>
-<div class="math" id="equation-kmat">
-<p><span class="eqno">(1)<a class="headerlink" href="#equation-kmat" title="Permalink to this equation">¶</a></span><img src="_images/math/533744d503a31d03db0e5d08909e4ab3565e76c6.png" alt="\mathbf{K_{ij}  = \sum_{\alpha=1}^{N}{\lambda_{\alpha} U^{\alpha}_i U^{\alpha}_j}}"/></p>
-</div><div class="section" id="fluctuation-matching">
+<div class="math notranslate nohighlight" id="equation-kmat">
+<span class="eqno">(1)<a class="headerlink" href="#equation-kmat" title="Permalink to this equation">¶</a></span>\[\mathbf{K_{ij}  = \sum_{\alpha=1}^{N}{\lambda_{\alpha} U^{\alpha}_i U^{\alpha}_j}}\]</div>
+<div class="section" id="fluctuation-matching">
 <h2>Fluctuation Matching<a class="headerlink" href="#fluctuation-matching" title="Permalink to this headline">¶</a></h2>
 <p>Fluctuation matching is a process where the variances of bond fluctuations obtained from CG-ENM through
 normal mode analysis (NMA) and all-atom MD through trajectories are matched by adjusting the force constants in the ENM
@@ -131,7 +132,7 @@ sites. This coupling strength dataframe will be the input for <a class="referenc
       &copy;2019, Nixon Raj, nix02g@nctu.edu.tw.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.1.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

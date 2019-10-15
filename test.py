@@ -32,13 +32,18 @@ import numpy as np
 
 
 from src.core import BuildMG
-mgt = BuildMG(filename="holo_pdz.txt", ressep=1, splitMgt="SS")
-# print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
-# print(mgt.table.shape[0])
-pdz, _ = mgt.mgt_mat()
-print(pdz)
 
 
+
+mgt = BuildMG(filename="holo_pdz.txt.bz2", ressep=1)
+
+# # print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
+# # print(mgt.table.shape[0])
+s1,s2 = mgt.mgt_mat()
+print(s2)
+
+# for comparing two dataframes equal
+#print(pd.testing.assert_frame_equal(kba, BB, check_exact=False, check_less_precise=6))
 
 # # print(tab_sum.head())
 # print(ss.head())
@@ -52,3 +57,4 @@ print(pdz)
 # row, col = np.diag_indices(ref_mat.shape[0])
 # ref_mat[row, col] = diag_val
 # print(pd.DataFrame(ref_mat, index=np.unique(_tab.resI.values), columns=np.unique(_tab.resI.values))
+
