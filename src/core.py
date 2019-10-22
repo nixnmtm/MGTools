@@ -27,7 +27,7 @@ class BuildMG(object):
 
     """
 
-    def __init__(self, filename: str, ressep=3, segid=None, splitMGT=True):
+    def __init__(self, filename: str, ressep=3, **kwargs):
         """
         :func:`__init__` method docstring.
         Creates a new :class:`BuildMG` instance.
@@ -47,8 +47,8 @@ class BuildMG(object):
         self.grouping = ["segidI", "resI", "segidJ", "resJ"]
         self._index = ["segidI", "resI", "I", "segidJ", "resJ", "J"]
         self.ressep = ressep
-        self.segid = segid
-        self.splitMGT = splitMGT
+        self.interSegs = kwargs.get('interSegs')  # should be a tuple
+        self.splitkeys = ["BB", "BS", "SS"]
 
     def load_table(self) -> pd.DataFrame:
         """
@@ -57,7 +57,7 @@ class BuildMG(object):
         :return: Processed Coupling Strength DataFrame
 
         """
-        logging.info("Loading file: {} from {}".format(self.filename, self.input_path))
+        logging.info("Loading '{}' from {}".format(self.filename, self.input_path))
         _, fileext = os.path.splitext(self.filename)
 
         if not (fileext[-3:] == "txt" or fileext[-3:] == "bz2"):
@@ -84,9 +84,9 @@ class BuildMG(object):
 
         """
         # split table into three tables based on BB,BS and SS
-        if not self.splitMGT:
-            raise ValueError("splitMGT must be True to run splitSS method")
-            exit(1)
+        # if not self.splitMGT:
+        #     raise ValueError("splitMGT must be True to run splitSS method")
+        #     exit(1)
 
         sstable = dict()
         tmp = self.table.copy(deep=True)
@@ -138,26 +138,54 @@ class BuildMG(object):
         """
         Returns the sum table based on the self.grouping
 
-        :return: splitMGT==True : dict of tables with keys ["BB", "BS", "SS"]
-                 splitMGT==False : sum of complete table
+        :return: dict of segids with  tables with keys ["BB", "BS", "SS"]
 
         """
         smtable = dict()
         sstable = self.splitSS()
-        sstable["full"] = self.table
-        keys = ["BB", "BS", "SS", "full"]
-        for key in keys:
-            tmp = self.sepres(table=sstable[key])
-            smtable[key] = tmp.groupby(self.grouping).sum()
-            if self.segid is not None:
-                mask = (smtable[key].index.get_level_values("segidI") == self.segid) & \
-                       (smtable[key].index.get_level_values("segidJ") == self.segid)
-                smtable[key] = smtable[key][mask]
-        popped = smtable.pop("full")
-        if self.splitMGT:
-            return smtable
-        else:
-            return popped
+
+        for seg in self.table.segidI.unique():
+            smtable[seg] = dict()
+            for key in self.splitkeys:
+                tmp = self.sepres(table=sstable[key]).groupby(self.grouping).sum()
+                mask = (tmp.index.get_level_values("segidI") == seg) & \
+                       (tmp.index.get_level_values("segidJ") == seg)
+                smtable[seg][key] = tmp[mask]
+
+        if self.interSegs is not None and isinstance(self.interSegs, tuple):
+            smtable[self.interSegs] = dict()
+            if self.interSegs[0] == self.interSegs[1]:
+                raise IOError("Inter segments should not be same")
+            for key in self.splitkeys:
+                tmp = self.sepres(table=sstable[key]).groupby(self.grouping).sum()
+                mask = (tmp.index.get_level_values("segidI") == self.interSegs[0]) & \
+                       (tmp.index.get_level_values("segidJ") == self.interSegs[1])
+                revmask = (tmp.index.get_level_values("segidI") == self.interSegs[1]) & \
+                       (tmp.index.get_level_values("segidJ") == self.interSegs[0])
+                intertab = pd.concat([tmp[mask], tmp[revmask]], axis=0)
+                fullsm = pd.concat([smtable[self.interSegs[0]][key], smtable[self.interSegs[1]][key]], axis=0)
+                smtable[self.interSegs][key] = pd.concat([fullsm, intertab], axis=0)
+
+        return smtable
+
+    def table_mean(self):
+        """
+
+        :return: mean table
+        """
+
+        table = self.table_sum()
+        mntable = dict()
+        for seg in table.keys():
+            mntable[seg] = dict()
+            if isinstance(table[seg], dict):
+                for key in table[seg].keys():
+                    mntable[seg][key] = table[seg][key].mean(axis=1)
+            elif isinstance(table[seg], pd.DataFrame):
+                mntable[seg] = table[seg].mean(axis=1)
+            else:
+                logging.warning("Unknown table format")
+        return mntable
 
     def mgt_mat(self, segid=None, ressep=None):
         """
@@ -170,6 +198,8 @@ class BuildMG(object):
         :return: MGT dataframe
 
         """
+
+
         def mgtcore(df):
             """
 
