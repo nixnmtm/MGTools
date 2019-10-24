@@ -15,7 +15,7 @@ class BuildMG(object):
     .. code-block:: python
 
         >>> from src.core import BuildMG
-        >>> mgt = BuildMG(filename="holo_pdz.txt.bz2", ressep=1, splitMgt="SS")
+        >>> mgt = BuildMG(filename="holo_pdz.txt.bz2", ressep=1)
         >>> print(mgt.mgt_mat())
 
                   5         6         7         8         9
@@ -138,7 +138,28 @@ class BuildMG(object):
         """
         Returns the sum table based on the self.grouping
 
-        :return: dict of segids with  tables with keys ["BB", "BS", "SS"]
+        :return: dict of sunm tables
+
+        :Example:
+        .. highlight:: python
+        .. code-block:: python
+
+        >>> from src.core import BuildMG
+        >>> mgt = BuildMG(filename="holo_pdz.txt.bz2", ressep=3, interSegs=("PDZ3", "CRPT"))
+        >>> print(mgt.table_sum())
+
+        {"CRPT": {"BB" :  df},
+                 {"BS" :  df},
+                 {"SS" :  df}
+        ,
+        "PDZ3": {"BB" :  df},
+                {"BS" :  df},
+                {"SS" :  df}
+        },
+        ("PDZ3", "CRPT"): {"BB" :  df},
+                          {"BS" :  df},
+                          {"SS" :  df}
+        },
 
         """
         smtable = dict()
@@ -170,21 +191,16 @@ class BuildMG(object):
 
     def table_mean(self):
         """
+        Return Mean of table
 
-        :return: mean table
+        :return: dict of mean tables, format as table_sum()
+
         """
 
         table = self.table_sum()
         mntable = dict()
         for seg in table.keys():
-            mntable[seg] = dict()
-            if isinstance(table[seg], dict):
-                for key in table[seg].keys():
-                    mntable[seg][key] = table[seg][key].mean(axis=1)
-            elif isinstance(table[seg], pd.DataFrame):
-                mntable[seg] = table[seg].mean(axis=1)
-            else:
-                logging.warning("Unknown table format")
+            mntable[seg] = {key: table[seg][key].mean(axis=1) for key in table[seg].keys()}
         return mntable
 
     def mgt_mat(self, segid=None, ressep=None):
