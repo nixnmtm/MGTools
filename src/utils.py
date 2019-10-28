@@ -8,6 +8,20 @@ import seaborn as sns
 logging.basicConfig(level=logging.WARNING)
 
 
+def get_submat(df, rescut, colcut):
+    """
+    Get a sub table from a full Kb table
+
+    :param df: input full dataframe
+    :param rescut: interactions upto residue id
+    :param colcut: upto windows columns
+    :return: sub matrix dataframe
+
+    """
+    df = df.loc[(df['resI'] <= rescut) & (df['resJ'] <= rescut)].loc[:, :str(colcut)]
+    return df
+
+
 def t_eigenVect(stab, SS=False):
     """ Return csm_mat, eigenVectors and eigenValues of all windows """
     Nwind = stab.columns.size
