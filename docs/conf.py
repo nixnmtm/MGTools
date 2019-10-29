@@ -32,6 +32,8 @@ extensions = [
     'sphinx.ext.githubpages',
     # 'sphinxcontrib.napoleon', #   <-- add this entry...
 ]
+# Display todos by setting to True
+todo_include_todos = True
 
 # Napoleon settings               <-- and this section
 # napoleon_google_docstring = True
