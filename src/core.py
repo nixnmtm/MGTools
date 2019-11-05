@@ -7,47 +7,50 @@ import string
 logging.basicConfig(level=logging.INFO)
 
 
-class BuildMG(object):
+class BaseMG(object):
     """
-    Base class for building Coupling strength dataframe.
+    Base class for building Coupling strength Table sum and mean for all segids including
+    their secondary structure splits.
 
     :param filename: Name of the file to be loaded
-    :param ressep: residue separation( >= I,I + ressep), (default=3)
+    :key ressep: residue separation( >= I,I + ressep), (default=3)
     :key interSegs: two segments names for inter segment analysis, should be a tuple
     :key input_path: path of file input, should be a str, if not given searches filename in Inputs folder
-    :returns: MGT Matrix
+    :returns:
 
 
     :Example:
     .. highlight:: python
     .. code-block:: python
 
-        >>> from src.core import BuildMG
-        >>> mgt = BuildMG(filename="holo_pdz.txt.bz2", ressep=1)
-        >>> print(mgt.mgt_mat(seg="CRPT", sptkey="BB"))
-
-                    5         6         8         9
-            5  0.146590  0.000000  0.139217  0.007373
-            6  0.000000  0.052921  0.000000  0.052921
-            8  0.139217  0.000000  0.139217  0.000000
-            9  0.007373  0.052921  0.000000  0.060294
+        >>> from src.core import BaseMG
+        >>> base = BaseMG(filename="holo_pdz.txt.bz2", ressep=1)
+        >>> print(base.table_mean()["CRPT"]["BB"].head())
+        segidI  resI  segidJ  resJ
+        CRPT    5     CRPT    6       169.063123
+                              7         3.482413
+                              8         0.139217
+                              9         0.007373
+                6     CRPT    5       169.063123
+        dtype: float64
 
     """
 
-    def __init__(self, filename: str, ressep=3, **kwargs):
+    def __init__(self, filename: str, **kwargs):
 
         self.filename = filename
         self.module_path = os.path.dirname(os.path.realpath(__file__))
-        if kwargs.get("input_path") is None:
-            self.input_path = os.path.join(self.module_path + "/../Inputs")
-        else:
-            self.input_path = kwargs.get("input_path")
-        self.table = self.load_table()
         self.grouping = ["segidI", "resI", "segidJ", "resJ"]
         self._index = ["segidI", "resI", "I", "segidJ", "resJ", "J"]
-        self.ressep = ressep
-        self.interSegs = kwargs.get('interSegs')  # should be a tuple
         self.splitkeys = ["BB", "BS", "SS"]
+
+        # kwargs
+        self.input_path = kwargs.get("input_path", os.path.join(self.module_path + "/../Inputs"))
+        self.ressep = kwargs.get('ressep', 3)
+        self.interSegs = kwargs.get('interSegs')  # should be a tuple
+
+        # function accessible as variable
+        self.table = self.load_table()
 
     def load_table(self) -> pd.DataFrame:
         """
@@ -140,24 +143,82 @@ class BuildMG(object):
         df = pd.concat([tmp, diff], axis=0)
         return df
 
+    def _nres(self, segid=None, ss=None):
+        """
+        Return number of residues in a segmet or inter-segments
+
+        :param segid: segment id
+        :param ss: splitkey
+        :return: number of residue (int)
+
+        """
+        return len(self.table_sum()[segid][ss].index.get_level_values("resI").unique())
+
+    def _resids(self, segid=None, ss=None):
+        """
+        Return resids of given segments.
+
+        :param seg: segid
+        :return: array of residue ids
+
+        """
+
+        return self.table_sum[segid][ss].index.get_level_values("resI").unique()
+
+    def _segids(self):
+        """
+        Return segids of given table.
+
+        :return: list of segids of given table.
+
+        """
+
+        return self.table.segidI.unique()
+
+    def _refactor_resid(self, df):
+        """
+        Rename the resids of inter segments.
+        | Method should be called only if segments has overlapping resids
+
+        :param df: Dataframe with overalpping resids in segments
+        :return: DataFrame with renamed resids
+        """
+        alphs = list(string.ascii_uppercase)
+        if self.interSegs is not None:
+            if isinstance(df.index, pd.core.index.MultiIndex):
+                df = df.reset_index()
+            for n, seg in enumerate(self.interSegs):
+                resids = df[df.segidI == seg].resI.unique()
+                if not resids.dtype == str:
+                    mapseg = [alphs[n] + str(i) for i in resids]
+                    mapd = dict(zip(resids, mapseg))
+                    df.loc[df['segidI'] == seg, 'resI'] = df['resI'].map(mapd)
+                    df.loc[df['segidJ'] == seg, 'resJ'] = df['resJ'].map(mapd)
+            renamed = df.set_index(self.grouping)
+            return renamed
+        else:
+            logging.warning(f"interSegs argument is None, but {self._refactor_resid.__name__} invoked")
+
+    def _comp_resid(self, df):
+        """
+        Compare resids of the two segments and return True if overlap exists in resids
+
+        :param df: DataFrame to check for comparision
+        :return: Boolean
+        """
+
+        if self.interSegs is not None:
+            if isinstance(df.index, pd.core.index.MultiIndex):
+                df = df.reset_index()
+            r1 = df[df.segidI == self.interSegs[0]].resI.unique()
+            r2 = df[df.segidI == self.interSegs[1]].resI.unique()
+            return np.intersect1d(r1, r2).size > 0
+
     def table_sum(self):
         """
         Returns the sum table based on the self.grouping
 
         :return: dict of sum tables
-
-        :Example:
-        .. highlight:: python
-        .. code-block:: python
-
-         >>> from src.core import BuildMG
-         >>> mgt = BuildMG(filename="holo_pdz.txt.bz2", ressep=3, interSegs=("PDZ3", "CRPT"))
-         >>> print(mgt.table_sum())
-         {
-         "CRPT":           {"BB": df, "BS": df, "SS": df},
-         "PDZ3":           {"BB": df, "BS": df, "SS": df},
-         ("PDZ3", "CRPT"): {"BB": df, "BS": df, "SS": df}
-         }
 
         """
 
@@ -184,7 +245,7 @@ class BuildMG(object):
                 mask = (tmp.index.get_level_values("segidI") == seg1) & \
                        (tmp.index.get_level_values("segidJ") == seg2)
                 revmask = (tmp.index.get_level_values("segidI") == seg2) & \
-                       (tmp.index.get_level_values("segidJ") == seg1)
+                          (tmp.index.get_level_values("segidJ") == seg1)
                 diff = pd.concat([tmp[mask], tmp[revmask]], axis=0)
                 same = pd.concat([smtable[seg1][key], smtable[seg2][key]], axis=0)
                 inter = pd.concat([same, diff], axis=0)
@@ -192,7 +253,6 @@ class BuildMG(object):
                     logging.warning("resids overlap, refactoring resids")
                     inter = self._refactor_resid(inter)
                 smtable[self.interSegs][key] = inter
-
 
         return smtable
 
@@ -209,68 +269,18 @@ class BuildMG(object):
             mntable[seg] = {key: table[seg][key].mean(axis=1) for key in table[seg].keys()}
         return mntable
 
-    def _nres(self, segid=None, ss=None):
-        """
-        Return number of residues in a segmet or inter-segments
 
-        :param segid: segment id
-        :param ss: splitkey
-        :return: number of residue (int)
+class MGCore(BaseMG):
+    """
+    Core Class for Building the Molecular Graph Matrix and Decomposition of it.
 
-        """
-        return len(self.stab[segid][ss].index.get_level_values("resI").unique())
+    """
+    def __init__(self, filename, **kwargs):
+        super(MGCore, self).__init__(filename, **kwargs)
+        self.segid = kwargs.get("segid")
+        self.sskey = kwargs.get("sskey")
 
-    def _resids(self, segid=None, ss=None):
-        """
-        Return resids of given segments.
-
-        :param seg: segid
-        :return: array of residue ids
-        """
-
-        return self.stab[segid][ss].index.get_level_values("resI").unique()
-
-    def _refactor_resid(self, df):
-        """
-        Rename the resids of inter segments.
-        | Method should be called only if segments has overlapping resids
-
-        :param df: Dataframe with overalpping resids in segments
-        :return: DataFrame with renamed resids
-        """
-        alphs = list(string.ascii_uppercase)
-        if self.interSegs is not None:
-            if isinstance(df.index, pd.core.index.MultiIndex):
-                df = df.reset_index()
-            for n, seg in enumerate(self.interSegs):
-                resids = df[df.segidI == seg].resI.unique()
-                if not resids.dtype == str:
-                    mapseg = [alphs[n] + str(i) for i in resids]
-                    mapd = dict(zip(resids, mapseg))
-                    df.loc[df['segidI'] == seg, 'resI'] = df['resI'].map(mapd)
-                    df.loc[df['segidJ'] == seg, 'resJ'] = df['resJ'].map(mapd)
-            renamed = df.set_index(self.grouping)
-        else:
-            logging.warning(f"interSegs argumet is None, but {self._refactor_resid.__name__} invoked")
-            pass
-        return renamed
-
-    def _comp_resid(self, df):
-        """
-        Compare resids of the two segments and return True if overlap exists in resids
-
-        :param df: DataFrame to check for comparision
-        :return: Boolean
-        """
-
-        if self.interSegs is not None:
-            if isinstance(df.index, pd.core.index.MultiIndex):
-                df = df.reset_index()
-            r1 = df[df.segidI == self.interSegs[0]].resI.unique()
-            r2 = df[df.segidI == self.interSegs[1]].resI.unique()
-            return np.intersect1d(r1, r2).size > 0
-
-    def mgt_mat(self, seg=None, sptkey=None):
+    def mg_mat(self):
         """
         Build MGT Matrix.
         | Input should be a :class:`pd.Series`
@@ -279,9 +289,21 @@ class BuildMG(object):
         :param seg: segment to convert, inter-segmets can be given as tuple --> eg:("PDZ3", "CRPT")
         :param sptkey: splitkey of segment to convert (eg: BB)
         :return:  MGT matrix, type dataframe
+
+        :Example:
+
+        >>> core = MGCore("holo_pdz.txt.bz2", segid="CRPT", sskey="BB", ressep=1)
+        >>> print(core.mg_mat())
+                    5           6           7           8           9
+        5  172.692126  169.063123    3.482413    0.139217    0.007373
+        6  169.063123  364.543558  193.112981    2.314533    0.052921
+        7    3.482413  193.112981  390.274191  192.792781    0.886016
+        8    0.139217    2.314533  192.792781  390.518684  195.272153
+        9    0.007373    0.052921    0.886016  195.272153  196.218462
+
         """
 
-        tab = self.table_mean()[seg][sptkey]
+        tab = self.table_mean()[self.segid][self.sskey]
         if isinstance(tab, pd.Series) and isinstance(tab.index, pd.core.index.MultiIndex):
             tab = tab.reset_index()
         if tab.groupby("resI").sum().shape[0] > 1:
@@ -292,3 +314,29 @@ class BuildMG(object):
         row, col = np.diag_indices(ref_mat.shape[0])
         ref_mat[row, col] = diag_val
         return pd.DataFrame(ref_mat, index=np.unique(tab.resI.values), columns=np.unique(tab.resI.values))
+
+    def eigh_decom(self):
+        """
+        Return the eigenvectors and eigenvalues, ordered by decreasing values of the
+        eigenvalues, for a real symmetric matrix M. The sign of the eigenvectors is fixed
+        so that the mean of its components is non-negative.
+
+        :param kmat: symmetric matrix to perform eigenvalue decomposition
+
+        :return: eigenvalues and eigenvectors
+
+        :Example:
+
+        >>> core = MGCore("holo_pdz.txt.bz2", segid="CRPT", sskey="BB", ressep=1)
+        >>> egval, egvec = core.eigh_decom()
+        >>> assert egval.shape[0] == egvec.shape[0]
+
+        """
+        eigval, eigvec = np.linalg.eigh(self.mg_mat())
+        idx = (-eigval).argsort()
+        eigval = eigval[idx]
+        eigvec = eigvec[:, idx]
+        for k in range(eigvec.shape[1]):
+            if np.sign(np.mean(eigvec[:, k])) != 0:
+                eigvec[:, k] = np.sign(np.mean(eigvec[:, k])) * eigvec[:, k]
+        return eigval, eigvec

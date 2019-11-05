@@ -1,60 +1,81 @@
 #from MGTools import MGTools
 import pandas as pd
 import numpy as np
-#
-#pdz3 = "C:/Users/nixon/Google Drive/coding/nw_notebooks/pdz3_kb_complete_apo_local_copy.txt"
-# kb_BB = "C:/Users/nixon/Google Drive/coding/nw_notebooks/kb_SS.txt"
-# #protease = "C:/Users/nixon/Google Drive/coding/nw_notebooks/kb_5ms_apo_local_copy.txt"
-# """The table should be a complete table with residue name and atom name already included"""
-#mgt = MGTools(pdbid="1BE9", table_path=pdz3, ressep=3)
-# mgt1 = MGTools(pdbid="3TGI", table_path=kb_BB, ressep=3)
-#
-# print(mgt.table.head())
-# print(mgt1.table.head())
-# print(mgt.table.columns[0])
-# if str(mgt1.table.columns[0]).startswith("Unnamed"):
-#     mgt1.table.drop(mgt.table.colums, axis=1)
-# print(mgt1.table)
-# # bb, bs, ss = mgt.split_sec_struc()
-# # s, m, sd = mgt.sum_mean()
-# #tmat, tvec, tval = mgt.t_eigenVect(SS=True)
-# #print(tval[0])
-# # print(len(mgt.get_residNname(segid=mgt.univ.segments[0].segid)[1]))
-# # print(len(np.unique(mgt.table.resI)))
-# # print((mgt.univ.segments[0].residues.resnames == "GLY").sum())
-# # print(mgt.univ.segments[0].residues.resnames[:10])
+import logging
 
-# didi = dict()
-# didi["ressep"] = 3
-#
-# if "ressep" in didi.keys():
-#     print(True)
+# below two functions are written to avil withoutsplitMGT also, noe decided to make spilMGT as default
 
+def table_sum(self):
+    """
+    Returns the sum table based on the self.grouping
 
-from src.core import BuildMG
+    :return: splitMGT==True : dict of segids with  tables with keys ["BB", "BS", "SS"]
+             splitMGT==False : dict of segids with sum of complete table
+
+    """
+    smtable = dict()
+    if self.splitMGT:
+        sstable = self.splitSS()
+    for seg in self.table.segidI.unique():
+        smtable[seg] = dict()
+        if self.splitMGT:
+            for key in self.splitkeys:
+                tmp = self.sepres(table=sstable[key]).groupby(self.grouping).sum()
+                mask = (tmp.index.get_level_values("segidI") == seg) & \
+                       (tmp.index.get_level_values("segidJ") == seg)
+                smtable[seg][key] = tmp[mask]
+        else:
+            tmp = self.sepres(table=self.table).groupby(self.grouping).sum()
+            mask = (tmp.index.get_level_values("segidI") == seg) & \
+                   (tmp.index.get_level_values("segidJ") == seg)
+            smtable[seg] = tmp[mask]
+    return smtable
 
 
+def table_mean(self):
+    """
 
-mgt = BuildMG(filename="holo_pdz.txt.bz2", ressep=1)
+    :return: mean table
+    """
 
-# # print("{}\n {}\n {}\n{}+".format(bb.shape[0], bs.shape[0], ss.shape[0], bb.shape[0]+bs.shape[0]+ss.shape[0]))
-# # print(mgt.table.shape[0])
-s1,s2 = mgt.mgt_mat()
-print(s2)
+    table = self.table_sum()
+    mntable = dict()
+    for seg in table.keys():
+        mntable[seg] = dict()
+        if isinstance(table[seg], dict) and self.splitMGT:
+            for key in table[seg].keys():
+                mntable[seg][key] = table[seg][key].mean(axis=1)
+        elif isinstance(table[seg], pd.DataFrame):
+            mntable[seg] = table[seg].mean(axis=1)
+        else:
+            logging.warning("Unknown table format")
+    return mntable
 
-# for comparing two dataframes equal
-#print(pd.testing.assert_frame_equal(kba, BB, check_exact=False, check_less_precise=6))
+def mgt_mat(self):
+    """
+    Build MGT Matrix
 
-# # print(tab_sum.head())
-# print(ss.head())
-# print(ss.set_index("resI"))
-# #print(ss.loc["PDZ3", 320])
-# print(np.unique(ss.resI.values))
+    :return: MGT dataframe
 
-# _tab = tab_mean.reset_index()
-# diag_val = _tab.groupby("resI").sum().drop("resJ", axis=1).values.ravel()
-# ref_mat = _tab.drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
-# row, col = np.diag_indices(ref_mat.shape[0])
-# ref_mat[row, col] = diag_val
-# print(pd.DataFrame(ref_mat, index=np.unique(_tab.resI.values), columns=np.unique(_tab.resI.values))
+    """
 
+    tab = self.table_mean()
+    mats = dict()
+    for seg in tab.keys():
+        mats[seg] = dict()
+        for key in tab[seg].keys():
+            if isinstance(tab[seg][key].index, pd.core.index.MultiIndex):
+                tab[seg][key] = tab[seg][key].reset_index()
+            diag_val = tab[seg][key].groupby("resI").sum().drop("resJ", axis=1).values.ravel()
+            ref_mat = tab[seg][key].drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
+            row, col = np.diag_indices(ref_mat.shape[0])
+            ref_mat[row, col] = diag_val
+            mats[seg][key] = pd.DataFrame(ref_mat, index=np.unique(tab[seg][key].resI.values), columns=np.unique(tab[seg][key].resI.values))
+
+    return mats
+
+
+from src.core import MGCore
+
+mgc = MGCore(filename="spholo_test_submat.txt")
+print(mgc.ressep, mgc.input_path, mgc._segids())
