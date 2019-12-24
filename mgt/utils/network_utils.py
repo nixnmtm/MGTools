@@ -7,7 +7,6 @@ import numpy as np
 import inspect
 
 
-
 class MGNetwork(object):
     """
     - Description   : Utility for crating network graphs from the MGT results.
@@ -45,7 +44,6 @@ class MGNetwork(object):
         norm_Lap = nx.normalized_laplacian_matrix(G, G.nodes(), weight="weight").todense()
 
         return A_mat, D_mat, Lap_mat, norm_Lap
-
 
     def get_interacting_edges(self, nodes, kbcut, intra=False):
         """
@@ -292,49 +290,6 @@ def to_commaseparray(inp):
     return np.asarray(all_res)
 
 
-def parse_pdb(pdb_handle):
-    """
-    Parses the PDB file as a pandas DataFrame object.
-
-    Backbone chain atoms are ignored for the calculation
-    of interacting residues.
-    """
-    atomic_data = []
-    with open(pdb_handle, "r") as f:
-        for line in f.readlines():
-            data = dict()
-            if line[0:4] == "ATOM":
-                data["Record name"] = line[0:5].strip(" ")
-                data["serial_number"] = int(line[6:11].strip(" "))
-                data["atom"] = line[12:15].strip(" ")
-                data["resi_name"] = line[17:20]
-                data["chain_id"] = line[21]
-                data["resid"] = line[23:27].strip(" ")
-                data["x"] = float(line[30:37])
-                data["y"] = float(line[38:45])
-                data["z"] = float(line[46:53])
-                atomic_data.append(data)
-    atomic_df = pd.DataFrame(atomic_data)
-    atomic_df["node_id"] = (
-            atomic_df["chain_id"]
-            + atomic_df["resid"].map(str)
-            + atomic_df["resi_name"]
-    )
-
-    ### Add continuous resnumber(resno)
-    dfs = []
-    for i in np.unique(atomic_df["chain_id"]):
-        tmp = atomic_df[atomic_df["chain_id"] == i]
-        resnum = range(1, len(np.unique(tmp["resid"])) + 1)
-        resids = tmp.resid.unique()
-        zipped = dict(list(zip(resids, resnum)))
-        tmp['resid'].replace(zipped, inplace=True)
-        dfs.append(tmp)
-    tmp = pd.concat(dfs, axis=0)
-    atomic_df["resno"] = tmp["resid"].astype(str)
-    return atomic_df
-
-
 def xypos(G):
     """
     Get x and y coordinates of given graph object
@@ -369,7 +324,6 @@ def _edges(mat, inc_mat=False):
     :return: weighted edgelists
     :rtype: list
     """
-
 
     amat = mat.unstack()
     Npos = mat.shape[0]

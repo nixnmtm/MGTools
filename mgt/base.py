@@ -4,7 +4,36 @@ import logging
 import numpy as np
 import string
 
-logging.basicConfig(level=logging.INFO)
+
+class LoadKbTable(object):
+
+    def __init__(self, filename, **kwargs):
+        self.filename = filename
+        self.module_path = os.path.dirname(os.path.realpath(__file__))
+        self.input_path = kwargs.get("input_path", os.path.join(self.module_path + "/../Inputs"))
+
+    def load_table(self) -> pd.DataFrame:
+        """
+        Load Coupling Strength DataFrame
+
+        :return: Processed Coupling Strength DataFrame
+
+        """
+        logging.info("Loading '{}' from {}".format(self.filename, self.input_path))
+        _, fileext = os.path.splitext(self.filename)
+
+        if not (fileext[-3:] == "txt" or fileext[-3:] == "bz2"):
+            logging.error("Please provide a appropriate file, with extension either txt or bz2")
+            exit(1)
+        filepath = os.path.join(self.input_path, self.filename)
+        try:
+            table = pd.read_csv(filepath, sep=' ')
+            if str(table.columns[0]).startswith("Unnamed"):
+                table = table.drop(table.columns[0], axis=1)
+            logging.info("File loaded.")
+            return table
+        except IOError as e:
+            logging.error(f'Error in loading file: {str(e)}')
 
 
 class BaseMG(object):
@@ -23,7 +52,7 @@ class BaseMG(object):
     .. highlight:: python
     .. code-block:: python
 
-        >>> from src.core import BaseMG
+        >>> from mgt.core import BaseMG
         >>> base = BaseMG(filename="holo_pdz.txt.bz2", ressep=1)
         >>> print(base.table_mean()["CRPT"]["BB"].head())
         segidI  resI  segidJ  resJ
@@ -36,45 +65,20 @@ class BaseMG(object):
 
     """
 
-    def __init__(self, filename: str, **kwargs):
+    def __init__(self, table: pd.DataFrame, **kwargs):
 
-        self.filename = filename
-        self.module_path = os.path.dirname(os.path.realpath(__file__))
         self.grouping = ["segidI", "resI", "segidJ", "resJ"]
         self._index = ["segidI", "resI", "I", "segidJ", "resJ", "J"]
+        self._complete_idx = ["segidI", "resI", "resnI", "I", "segidJ", "resJ", "resnJ", "J"]
         self.splitkeys = ["BB", "BS", "SS"]
 
         # kwargs
-        self.input_path = kwargs.get("input_path", os.path.join(self.module_path + "/../Inputs"))
         self.ressep = kwargs.get('ressep', 3)
-        self.interSegs = kwargs.get('interSegs')  # should be a tuple
+        self.interSegs = kwargs.get('interSegs', None)  # should be a tuple
+        self.table = table
+        self.tot_nres = len(self.table.resI.unique())
 
-        # function accessible as variable
-        self.table = self.load_table()
-
-    def load_table(self) -> pd.DataFrame:
-        """
-        Load Coupling Strength DataFrame
-
-        :return: Processed Coupling Strength DataFrame
-
-        """
-        logging.info("Loading '{}' from {}".format(self.filename, self.input_path))
-        _, fileext = os.path.splitext(self.filename)
-
-        if not (fileext[-3:] == "txt" or fileext[-3:] == "bz2"):
-            logging.error("Please provide a appropriate file, with extension either txt or bz2")
-        filepath = os.path.join(self.input_path, self.filename)
-        try:
-            table = pd.read_csv(filepath, sep=' ')
-            if str(table.columns[0]).startswith("Unnamed"):
-                table = table.drop(table.columns[0], axis=1)
-            logging.info("File loaded.")
-            return table
-        except IOError as e:
-            logging.error(f'Error in loading file: {str(e)}')
-
-    def splitSS(self, write: bool = False) -> dict:
+    def splitSS(self, write: bool = False, exclude_disul: bool = True) -> dict:
         """
         Split based on secondary structures.
 
@@ -84,6 +88,7 @@ class BaseMG(object):
 
         :param df: Dataframe to split. If None, df initialized during class instance is taken
         :param write: write after splitting
+        :param exclude_disul: exclude disulphide interactions (default: True)
         :return: dict of split DataFrames
 
         .. todo::
@@ -100,8 +105,8 @@ class BaseMG(object):
         tmp = self.table.copy(deep=True)
         try:
             # BACKBONE-BACKBONE
-            sstable['BB'] = tmp[((tmp["I"] == 'N') | (tmp["I"] == 'O') | (tmp["I"] == 'ions')) \
-                      & ((tmp["J"] == 'N') | (tmp["J"] == 'O') | (tmp["J"] == 'ions'))]
+            sstable['BB'] = tmp[((tmp["I"] == 'N') | (tmp["I"] == 'O') | (tmp["I"] == 'ions'))
+                                & ((tmp["J"] == 'N') | (tmp["J"] == 'O') | (tmp["J"] == 'ions'))]
 
             # BACKBONE-SIDECHAIN
             BS = tmp[((tmp["I"] == "N") | (tmp["I"] == 'O') | (tmp["I"] == "ions")) & (tmp["J"] == 'CB')]
@@ -109,7 +114,16 @@ class BaseMG(object):
             sstable['BS'] = pd.concat([BS, SB], axis=0, ignore_index=True)
 
             # SIDECHAIN-SIDECHAIN
-            sstable['SS'] = tmp[(tmp["I"] == "CB") & (tmp["J"] == "CB")]
+            tmp_SS = tmp[(tmp["I"] == "CB") & (tmp["J"] == "CB")]
+
+            if exclude_disul:
+                tmp_SS = tmp_SS.set_index(self._complete_idx)
+                tmp_SS = tmp_SS[(tmp_SS < 100).any(axis=1)]
+                sstable['SS'] = tmp_SS.reset_index()
+
+            else:
+                sstable['SS'] = tmp_SS
+
 
             # write the file, if needed
             if write:
@@ -253,7 +267,6 @@ class BaseMG(object):
                     logging.warning("resids overlap, refactoring resids")
                     inter = self._refactor_resid(inter)
                 smtable[self.interSegs][key] = inter
-
         return smtable
 
     def table_mean(self):
@@ -263,80 +276,8 @@ class BaseMG(object):
         :return: dict of mean tables, format as table_sum()
 
         """
-        table = self.table_sum()
+        stab = self.table_sum()
         mntable = dict()
-        for seg in table.keys():
-            mntable[seg] = {key: table[seg][key].mean(axis=1) for key in table[seg].keys()}
+        for seg in stab.keys():
+            mntable[seg] = {key: stab[seg][key].mean(axis=1) for key in stab[seg].keys()}
         return mntable
-
-
-class MGCore(BaseMG):
-    """
-    Core Class for Building the Molecular Graph Matrix and Decomposition of it.
-
-    """
-    def __init__(self, filename, **kwargs):
-        super(MGCore, self).__init__(filename, **kwargs)
-        self.segid = kwargs.get("segid")
-        self.sskey = kwargs.get("sskey")
-
-    def mg_mat(self):
-        """
-        Build MGT Matrix.
-        | Input should be a :class:`pd.Series`
-
-        :param df: Mean series or window series
-        :param seg: segment to convert, inter-segmets can be given as tuple --> eg:("PDZ3", "CRPT")
-        :param sptkey: splitkey of segment to convert (eg: BB)
-        :return:  MGT matrix, type dataframe
-
-        :Example:
-
-        >>> core = MGCore("holo_pdz.txt.bz2", segid="CRPT", sskey="BB", ressep=1)
-        >>> print(core.mg_mat())
-                    5           6           7           8           9
-        5  172.692126  169.063123    3.482413    0.139217    0.007373
-        6  169.063123  364.543558  193.112981    2.314533    0.052921
-        7    3.482413  193.112981  390.274191  192.792781    0.886016
-        8    0.139217    2.314533  192.792781  390.518684  195.272153
-        9    0.007373    0.052921    0.886016  195.272153  196.218462
-
-        """
-
-        tab = self.table_mean()[self.segid][self.sskey]
-        if isinstance(tab, pd.Series) and isinstance(tab.index, pd.core.index.MultiIndex):
-            tab = tab.reset_index()
-        if tab.groupby("resI").sum().shape[0] > 1:
-            diag_val = tab.groupby("resI").sum().drop("resJ", axis=1).values.ravel()
-        else:
-            diag_val = tab.groupby("resI").sum().values.ravel()
-        ref_mat = tab.drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
-        row, col = np.diag_indices(ref_mat.shape[0])
-        ref_mat[row, col] = diag_val
-        return pd.DataFrame(ref_mat, index=np.unique(tab.resI.values), columns=np.unique(tab.resI.values))
-
-    def eigh_decom(self):
-        """
-        Return the eigenvectors and eigenvalues, ordered by decreasing values of the
-        eigenvalues, for a real symmetric matrix M. The sign of the eigenvectors is fixed
-        so that the mean of its components is non-negative.
-
-        :param kmat: symmetric matrix to perform eigenvalue decomposition
-
-        :return: eigenvalues and eigenvectors
-
-        :Example:
-
-        >>> core = MGCore("holo_pdz.txt.bz2", segid="CRPT", sskey="BB", ressep=1)
-        >>> egval, egvec = core.eigh_decom()
-        >>> assert egval.shape[0] == egvec.shape[0]
-
-        """
-        eigval, eigvec = np.linalg.eigh(self.mg_mat())
-        idx = (-eigval).argsort()
-        eigval = eigval[idx]
-        eigvec = eigvec[:, idx]
-        for k in range(eigvec.shape[1]):
-            if np.sign(np.mean(eigvec[:, k])) != 0:
-                eigvec[:, k] = np.sign(np.mean(eigvec[:, k])) * eigvec[:, k]
-        return eigval, eigvec
