@@ -1,0 +1,263 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="English">
+  <head>
+    <meta charset="utf-8" />
+    <title>Network tools used in MGT &#8212; Molecular Graph Theory v3.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Tools used in MGT Analysis" href="utils.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="network-tools-used-in-mgt">
+<h1>Network tools used in MGT<a class="headerlink" href="#network-tools-used-in-mgt" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference internal" href="#module-network_utils" title="network_utils"><code class="xref py py-mod docutils literal notranslate"><span class="pre">network_utils</span></code></a> module consists of the base <code class="xref py py-class docutils literal notranslate"><span class="pre">MGnetwork</span></code> class that contains the tools for Network analysis.</p>
+<span class="target" id="module-network_utils"></span><dl class="class">
+<dt id="network_utils.MGNetwork">
+<em class="property">class </em><code class="sig-prename descclassname">network_utils.</code><code class="sig-name descname">MGNetwork</code><a class="headerlink" href="#network_utils.MGNetwork" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<ul class="simple">
+<li><p>Description   : Utility for crating network graphs from the MGT results.</p></li>
+<li><p>Author        : Nixon</p></li>
+</ul>
+<dl class="method">
+<dt id="network_utils.MGNetwork.add_backbone">
+<code class="sig-name descname">add_backbone</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">chain_id=None</em>, <em class="sig-param">node_name='resid'</em><span class="sig-paren">)</span><a class="headerlink" href="#network_utils.MGNetwork.add_backbone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add all nodes and their backbone edges.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> -- dataframe with basic datas of a protein</p></li>
+<li><p><strong>chain_id</strong> -- segment id in original pdb file</p></li>
+<li><p><strong>node_name</strong> -- node name to follow, if resid, the resids are taken
+if resno, the residue numbers are taken</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Graph object with backbone edges added</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="network_utils.MGNetwork.draw_protein_graph">
+<code class="sig-name descname">draw_protein_graph</code><span class="sig-paren">(</span><em class="sig-param">G</em>, <em class="sig-param">kbcut</em>, <em class="sig-param">imp_res=None</em><span class="sig-paren">)</span><a class="headerlink" href="#network_utils.MGNetwork.draw_protein_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw 2D protein graph using NetworkX, shows interactions of all residues &gt; kbcut.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>G</strong> (<em>object</em>) -- graph object with all nodes and edges with necessary attributes</p></li>
+<li><p><strong>kbcut</strong> (<em>int</em>) -- draw interaction greater than coupling strength cutoff</p></li>
+<li><p><strong>imp_res</strong> -- resids to highlight</p></li>
+<li><p><strong>type</strong> -- list of strings</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="network_utils.MGNetwork.draw_sub_protein_graph">
+<code class="sig-name descname">draw_sub_protein_graph</code><span class="sig-paren">(</span><em class="sig-param">G</em>, <em class="sig-param">resids</em>, <em class="sig-param">col</em>, <em class="sig-param">res_overlap=None</em>, <em class="sig-param">kbcut=0.0</em>, <em class="sig-param">intra=False</em>, <em class="sig-param">prefix=None</em><span class="sig-paren">)</span><a class="headerlink" href="#network_utils.MGNetwork.draw_sub_protein_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw 2D protein graph using NetworkX, only interactions between given resids &gt; kbcut.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>G</strong> (<em>object</em>) -- graph object with all nodes and edges with necessary attributes</p></li>
+<li><p><strong>resids</strong> -- resids whose interactions are plotted</p></li>
+<li><p><strong>type</strong> -- list of strings</p></li>
+<li><p><strong>col</strong> (<em>string</em>) -- color for resids</p></li>
+<li><p><strong>kbcut</strong> (<em>int</em>) -- draw interaction greater than coupling strength cutoff</p></li>
+<li><p><strong>intra</strong> (<em>Boolean</em>) -- if True, get edgeslists of intra interactions of given resids
+False, get all interacting edgelists of given resids (default)</p></li>
+<li><p><strong>prefix</strong> (<em>string</em>) -- prefix for title</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="network_utils.MGNetwork.get_interacting_edges">
+<code class="sig-name descname">get_interacting_edges</code><span class="sig-paren">(</span><em class="sig-param">G</em>, <em class="sig-param">nodes</em>, <em class="sig-param">kbcut</em>, <em class="sig-param">intra=False</em><span class="sig-paren">)</span><a class="headerlink" href="#network_utils.MGNetwork.get_interacting_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get edgelists for a set of nodes, if interactions are present</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>G</strong> -- graph object</p></li>
+<li><p><strong>nodes</strong> -- list of nodes to get combinations</p></li>
+<li><p><strong>kbcut</strong> -- kb cut off</p></li>
+<li><p><strong>intra</strong> -- if True: get only intra interacting edges for given nodes
+False: get all interacting edges of the given nodes</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="network_utils.MGNetwork.graph_mtrx">
+<code class="sig-name descname">graph_mtrx</code><span class="sig-paren">(</span><em class="sig-param">mat</em><span class="sig-paren">)</span><a class="headerlink" href="#network_utils.MGNetwork.graph_mtrx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Adjacency, Degree, Laplacian Matrices using edge_weights</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mat</strong> (<em>pd.DataFrame</em>) -- the symmetric K matrix</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>adjacency matrix, Degree matrix, laplacian matrix and normalized laplacian matrix</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy arrayedg</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="network_utils.parse_pdb">
+<code class="sig-prename descclassname">network_utils.</code><code class="sig-name descname">parse_pdb</code><span class="sig-paren">(</span><em class="sig-param">pdb_handle</em><span class="sig-paren">)</span><a class="headerlink" href="#network_utils.parse_pdb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the PDB file as a pandas DataFrame object.</p>
+<p>Backbone chain atoms are ignored for the calculation
+of interacting residues.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="network_utils.retrieve_name">
+<code class="sig-prename descclassname">network_utils.</code><code class="sig-name descname">retrieve_name</code><span class="sig-paren">(</span><em class="sig-param">var</em><span class="sig-paren">)</span><a class="headerlink" href="#network_utils.retrieve_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get function or variable name as string</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>var</strong> -- the variable or function as input</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>string of var name</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="network_utils.to_commaseparray">
+<code class="sig-prename descclassname">network_utils.</code><code class="sig-name descname">to_commaseparray</code><span class="sig-paren">(</span><em class="sig-param">inp</em><span class="sig-paren">)</span><a class="headerlink" href="#network_utils.to_commaseparray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts many int in a string to array of ints</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inp</strong> -- string with int separated by spaces</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>array of int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="network_utils.xypos">
+<code class="sig-prename descclassname">network_utils.</code><code class="sig-name descname">xypos</code><span class="sig-paren">(</span><em class="sig-param">G</em><span class="sig-paren">)</span><a class="headerlink" href="#network_utils.xypos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get x and y coordinates of given graph object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>G</strong> -- graph object to add x, y coordinates</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>graph object with attributes x and y added</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="toctree-wrapper compound">
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Molecular Graph Theory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core Modules of MGT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Tools used in MGT Analysis</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Network tools used in MGT</a><ul class="simple">
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="utils.html" title="previous chapter">Tools used in MGT Analysis</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Nixon Raj, nix02g@nctu.edu.tw.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/network_utils.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

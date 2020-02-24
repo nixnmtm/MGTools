@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="English">
+  <head>
+    <meta charset="utf-8" />
+    <title>Core Modules of MGT &#8212; Molecular Graph Theory v3.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tools used in MGT Analysis" href="utils.html" />
+    <link rel="prev" title="Welcome to Molecular Graph Theory&#39;s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="core-modules-of-mgt">
+<h1>Core Modules of MGT<a class="headerlink" href="#core-modules-of-mgt" title="Permalink to this headline">¶</a></h1>
+<dl class="simple">
+<dt><a class="reference internal" href="#module-core" title="core"><code class="xref py py-mod docutils literal notranslate"><span class="pre">core</span></code></a> module consists of:</dt><dd><ol class="arabic simple">
+<li><p>The base <code class="xref py py-class docutils literal notranslate"><span class="pre">core.BaseMG</span></code> that preprocess the fluctuogram data.</p></li>
+<li><p>The core <code class="xref py py-class docutils literal notranslate"><span class="pre">core.CoreMG</span></code> that builds the molecular graph matrix and decompose it.</p></li>
+</ol>
+</dd>
+</dl>
+<p>To analyze inter-segments, use the <code class="docutils literal notranslate"><span class="pre">interSegs</span></code> argument with tuple of two segments. If the residue ids in two segments
+overlap, the residue ids are renamed using <code class="xref py py-func docutils literal notranslate"><span class="pre">_refactor_resid()</span></code> for correct MG matrix creation.</p>
+<span class="target" id="module-core"></span><dl class="class">
+<dt id="core.MGCore">
+<em class="property">class </em><code class="sig-prename descclassname">core.</code><code class="sig-name descname">MGCore</code><span class="sig-paren">(</span><em class="sig-param">table</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">mgt.base.BaseMG</span></code></p>
+<p>Core Class for The Molecular Graph Theory Analysis</p>
+<dl class="method">
+<dt id="core.MGCore.calc_persistence">
+<code class="sig-name descname">calc_persistence</code><span class="sig-paren">(</span><em class="sig-param">dot_mat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.calc_persistence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate Persistence of eigenmodes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dot_mat</strong> -- matrix with dot product values of each mode.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>persistence of each mode</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.eigh_decom">
+<code class="sig-name descname">eigh_decom</code><span class="sig-paren">(</span><em class="sig-param">kmat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.eigh_decom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the eigenvectors and eigenvalues, ordered by decreasing values of the
+eigenvalues, for a real symmetric matrix M. The sign of the eigenvectors is fixed
+so that the mean of its components is non-negative.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kmat</strong> -- symmetric matrix to perform eigenvalue decomposition</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>eigenvalues and eigenvectors</p>
+</dd>
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">load</span> <span class="o">=</span> <span class="n">LoadKbTable</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;holo_pdz.txt.bz2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kb_aa</span> <span class="o">=</span> <span class="n">load</span><span class="o">.</span><span class="n">load_table</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">core</span> <span class="o">=</span> <span class="n">MGCore</span><span class="p">(</span><span class="n">kb_aa</span><span class="p">,</span> <span class="n">segid</span><span class="o">=</span><span class="s2">&quot;CRPT&quot;</span><span class="p">,</span> <span class="n">sskey</span><span class="o">=</span><span class="s2">&quot;BB&quot;</span><span class="p">,</span> <span class="n">ressep</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">egval</span><span class="p">,</span> <span class="n">egvec</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">eigh_decom</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">egval</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">egvec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.evec_dotpdts">
+<code class="sig-name descname">evec_dotpdts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.evec_dotpdts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate dot products between eigen vectors of decomposed mean mgt matrix and each window mgt matrix</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{M_{ij} = {U^r_i \cdot U^w_j}}\]</div>
+<p>r - reference mean matrix eigen vectors</p>
+<p>w - windows eigen vectors</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.get_mean_table">
+<code class="sig-name descname">get_mean_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.get_mean_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get mean table of specific secondary structure and segid</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segid</strong> -- segid</p></li>
+<li><p><strong>sskey</strong> -- secondary structure key</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataframe of mean table</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.get_nres_seg">
+<code class="sig-name descname">get_nres_seg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.get_nres_seg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ger number of residues in a segment
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.get_sum_table">
+<code class="sig-name descname">get_sum_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.get_sum_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get table sum of specific secondary structure and segid</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segid</strong> -- segid</p></li>
+<li><p><strong>sskey</strong> -- secondary structure key</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataframe of sum table</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.molg_mat">
+<code class="sig-name descname">molg_mat</code><span class="sig-paren">(</span><em class="sig-param">tab=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.molg_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build MGT Matrix.
+| Input should be a <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.Series</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tab</strong> -- Mean series or window series</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>MGT matrix, type dataframe</p>
+</dd>
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">load</span> <span class="o">=</span> <span class="n">LoadKbTable</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;holo_pdz.txt.bz2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kb_aa</span> <span class="o">=</span> <span class="n">load</span><span class="o">.</span><span class="n">load_table</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">core</span> <span class="o">=</span> <span class="n">MGCore</span><span class="p">(</span><span class="n">kb_aa</span><span class="p">,</span> <span class="n">segid</span><span class="o">=</span><span class="s2">&quot;CRPT&quot;</span><span class="p">,</span> <span class="n">sskey</span><span class="o">=</span><span class="s2">&quot;BB&quot;</span><span class="p">,</span> <span class="n">ressep</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">molg_mat</span><span class="p">())</span>
+<span class="go">            5           6           7           8           9</span>
+<span class="go">5  172.692126  169.063123    3.482413    0.139217    0.007373</span>
+<span class="go">6  169.063123  364.543558  193.112981    2.314533    0.052921</span>
+<span class="go">7    3.482413  193.112981  390.274191  192.792781    0.886016</span>
+<span class="go">8    0.139217    2.314533  192.792781  390.518684  195.272153</span>
+<span class="go">9    0.007373    0.052921    0.886016  195.272153  196.218462</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.sepres">
+<code class="sig-name descname">sepres</code><span class="sig-paren">(</span><em class="sig-param">table</em><span class="sig-paren">)</span> &#x2192; object<a class="headerlink" href="#core.MGCore.sepres" title="Permalink to this definition">¶</a></dt>
+<dd><p>Residue Separation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> -- table for sequence separation</p></li>
+<li><p><strong>ressep</strong> -- sequence separation to include (eg.  &gt;= I,I + ressep), default is I,I+3)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DataFrame after separation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.splitSS">
+<code class="sig-name descname">splitSS</code><span class="sig-paren">(</span><em class="sig-param">write: bool = False</em>, <em class="sig-param">exclude_disul: bool = True</em><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#core.MGCore.splitSS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split based on secondary structures.</p>
+<div class="line-block">
+<div class="line">BB - Backbone-Backbone Interactions</div>
+<div class="line">BS - Backbone-Sidechain Interactions</div>
+<div class="line">SS - Sidechain-Sidehain Interactions</div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> -- Dataframe to split. If None, df initialized during class instance is taken</p></li>
+<li><p><strong>write</strong> -- write after splitting</p></li>
+<li><p><strong>exclude_disul</strong> -- exclude disulphide interactions (default: True)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dict of split DataFrames</p>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<ol class="arabic simple">
+<li><p>Try to include ion interaction with SS</p></li>
+<li><p>Remove ion interactions from BS</p></li>
+</ol>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.table_intraseg">
+<code class="sig-name descname">table_intraseg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.table_intraseg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.table_mean">
+<code class="sig-name descname">table_mean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.table_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return Mean of table</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dict of mean tables, format as table_sum()</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.table_sum">
+<code class="sig-name descname">table_sum</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.table_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the sum table based on the self.grouping</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dict of sum tables</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.windows_eigen_decom">
+<code class="sig-name descname">windows_eigen_decom</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.windows_eigen_decom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return csm_mat, eigenVectors and eigenValues of all windows</p>
+<div class="admonition-todo admonition" id="id2">
+<p class="admonition-title">Todo</p>
+<ol class="arabic simple">
+<li><p>Check for smarter ways to speed it up</p></li>
+<li><p>So far this is the best way</p></li>
+</ol>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Molecular Graph Theory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Core Modules of MGT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Tools used in MGT Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="network_utils.html">Network tools used in MGT</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to Molecular Graph Theory's documentation!</a></li>
+      <li>Next: <a href="utils.html" title="next chapter">Tools used in MGT Analysis</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Nixon Raj, nix02g@nctu.edu.tw.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/core.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
