@@ -6,6 +6,14 @@ import string
 
 
 class LoadKbTable(object):
+    """
+    Load the complete table from given location
+
+    :param filename: Name of the file to be loaded
+    :key input_path: path of file input, should be a str, if not given searches filename in Inputs folder
+
+    :returns Dataframe of the data based on CG bead vs Time Windows
+    """
 
     def __init__(self, filename, **kwargs):
         self.filename = filename
@@ -41,12 +49,8 @@ class BaseMG(object):
     Base class for building Coupling strength Table sum and mean for all segids including
     their secondary structure splits.
 
-    :param filename: Name of the file to be loaded
     :key ressep: residue separation( >= I,I + ressep), (default=3)
     :key interSegs: two segments names for inter segment analysis, should be a tuple
-    :key input_path: path of file input, should be a str, if not given searches filename in Inputs folder
-    :returns:
-
 
     :Example:
     .. highlight:: python
@@ -67,7 +71,7 @@ class BaseMG(object):
 
     def __init__(self, table: pd.DataFrame, **kwargs):
 
-        self.grouping = ["segidI", "resI", "segidJ", "resJ"]
+        self.grouping = ["segidI", "resI", "resnI", "segidJ", "resJ", "resnJ"]
         self._index = ["segidI", "resI", "I", "segidJ", "resJ", "J"]
         self._complete_idx = ["segidI", "resI", "resnI", "I", "segidJ", "resJ", "resnJ", "J"]
         self.splitkeys = ["BB", "BS", "SS"]
@@ -77,8 +81,10 @@ class BaseMG(object):
         self.interSegs = kwargs.get('interSegs', None)  # should be a tuple
         self.table = table
         self.tot_nres = len(self.table.resI.unique())
+        self.exclude_disul = kwargs.get('exclude_disul', True)
+        print(self.exclude_disul)
 
-    def splitSS(self, write: bool = False, exclude_disul: bool = True) -> dict:
+    def splitSS(self, write: bool = False) -> dict:
         """
         Split based on secondary structures.
 
@@ -116,7 +122,7 @@ class BaseMG(object):
             # SIDECHAIN-SIDECHAIN
             tmp_SS = tmp[(tmp["I"] == "CB") & (tmp["J"] == "CB")]
 
-            if exclude_disul:
+            if self.exclude_disul:
                 tmp_SS = tmp_SS.set_index(self._complete_idx)
                 tmp_SS = tmp_SS[(tmp_SS < 100).any(axis=1)]
                 sstable['SS'] = tmp_SS.reset_index()
@@ -245,10 +251,11 @@ class BaseMG(object):
         for seg in self.table.segidI.unique():
             smtable[seg] = dict()
             for key in self.splitkeys:
-                tmp = self.sepres(table=sstable[key]).groupby(self.grouping).sum()
-                mask = (tmp.index.get_level_values("segidI") == seg) & \
-                       (tmp.index.get_level_values("segidJ") == seg)
-                smtable[seg][key] = tmp[mask]
+                if not sstable[key].empty:
+                    tmp = self.sepres(table=sstable[key]).groupby(self.grouping).sum()
+                    mask = (tmp.index.get_level_values("segidI") == seg) & \
+                           (tmp.index.get_level_values("segidJ") == seg)
+                    smtable[seg][key] = tmp[mask]
 
         if self.interSegs is not None and isinstance(self.interSegs, tuple):
             smtable[self.interSegs] = dict()
