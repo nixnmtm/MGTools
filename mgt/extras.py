@@ -10,6 +10,9 @@ aa_3to1map = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K', 'ILE':
               'THR': 'T', 'PHE': 'F', 'ASN': 'N',  'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R',
               'TRP': 'W', 'ALA': 'A', 'VAL': 'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M'}
 
+aa = {"describe": "hydrophobic residues",
+      "hpho": ['ALA', 'VAL', 'LEU', 'ILE', 'PHE', 'PRO', 'TRP', 'MET']}
+
 
 def parse_pdb(pdb_handle):
     """
@@ -54,11 +57,21 @@ def parse_pdb(pdb_handle):
     return atomic_df
 
 
-def get_aa_format(pdb_path):
+def get_pdb_resid(pdb_path):
+    """Get the pdb resid of the given pdb file"""
+    pdb_data = parse_pdb(pdb_path)
+    return pdb_data.resid.unique()
+
+
+def get_pdb_aaresid(pdb_path):
+    """Get the resid with single letter amino acid codon
+        eg: I16
+    """
     pdb_data = parse_pdb(pdb_path)
     pdb_aa = pd.DataFrame()
     pdb_aa["aa_1"] = [aa_3to1map[i] for i in pdb_data.resi_name.values]
     pdb_aa["pdb_aa"] = pdb_aa["aa_1"] + pdb_data.resid
+
     return pdb_aa.pdb_aa.unique()
 
 
@@ -76,7 +89,7 @@ def get_submat(df, rescut, colcut):
     return df
 
 
-def significant_residues(eigenVector, pers_modes, cutoff):
+def significant_residues(eigenVector, pers_modes, cutoff, resids):
     """
     Get significant residues from persistant modes
 
@@ -91,9 +104,10 @@ def significant_residues(eigenVector, pers_modes, cutoff):
     r = list()
     for j in pers_modes:
         for i in np.where(eigenVector[:, j - 1] * eigenVector[:, j - 1] >= cutoff):
-            r.append(i + 1)
+            r.append(resids[i])
     top_res = np.sort(np.unique(np.concatenate(r, axis=0)))
-    # print "Residues from significant modes: \n {} and size is {}".format(top_res, top_res.size)
+    # print "Residues from significant modes: \n {} and size is {}".format(
+    # top_res, top_res.size)
     return top_res
 
 
@@ -191,3 +205,22 @@ def get_kbHmodes(mean_table, eig_vec, kBcut=5, resnoIndexAdd=None, Npos=None):
                             mode_details.append(mode_res)
     modes = np.unique([k for m in mode_details for k, v in m.items()])
     return mode_details, modes
+
+
+def remove_reverse_duplicates_indices(df):
+    _index = df.index.names
+    if isinstance(df.index, pd.core.index.MultiIndex):
+        df = df.reset_index().set_index(["resI", "resJ"])  # setting resi and resJ as index
+    else:
+        df = df.set_index(["resI", "resJ"])
+    non_rev_idx = {tuple(item) for item in map(sorted, df.index.values)}  # reverse duplicates removed
+
+    non_dups = df.loc[list(non_rev_idx)]  # get the non-duplicate table
+    non_dups = non_dups.reset_index().set_index(_index)
+    return non_dups.sort_values(["resI"])
+
+
+def get_hydrophobic_interactions(df, hydrphobic_res=None):
+    tmp = df[df.index.get_level_values("resnI").isin(hydrphobic_res)]
+    hypho_interactions = tmp[tmp.index.get_level_values("resnJ").isin(hydrphobic_res)]
+    return remove_reverse_duplicates_indices(hypho_interactions)

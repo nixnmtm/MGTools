@@ -15,7 +15,6 @@ class MGCore(BaseMG):
         super(MGCore, self).__init__(table, **kwargs)
         self.segid = kwargs.get("segid")
         self.sskey = kwargs.get("sskey")
-        self.res_idx, self.nres = self.get_nres_seg()
 
     def get_sum_table(self):
         """
@@ -31,32 +30,42 @@ class MGCore(BaseMG):
         """
         Get mean table of specific secondary structure and segid
 
-        :param segid: segid
-        :param sskey: secondary structure key
         :return: Dataframe of mean table
         """
         return self.table_mean()[self.segid][self.sskey]
 
-    def table_intraseg(self):
-        tmp = self.table.copy(deep=True)
-        if isinstance(self.table.index, pd.core.index.MultiIndex):
-            mask = (tmp.index.get_level_values("segidI") == self.segid) & \
-                   (tmp.index.get_level_values("segidJ") == self.segid)
-            return tmp[mask].reset_index()
-        else:
-            mask = (tmp["segidI"] == self.segid) & (tmp["segidJ"] == self.segid)
-            return tmp[mask]
+    def get_table(self):
+        """
+        Get table based on sskey and segid
 
-    def get_nres_seg(self):
+        :return: Dataframe
+        """
+
+        splits = self.splitSS()[self.sskey]
+        return self.get_intraseg_df(splits, self.segid)
+
+    @staticmethod
+    def get_intraseg_df(table, segid):
+        logging.info(f"Getting only the {segid} segment interactions")
+        if isinstance(table.index, pd.core.index.MultiIndex):
+            mask = (table.index.get_level_values("segidI") == segid) & \
+                   (table.index.get_level_values("segidJ") == segid)
+            return table[mask]
+        else:
+            mask = (table["segidI"] == segid) & (table["segidJ"] == segid)
+            return table[mask]
+
+    def get_resids(self):
         """
         Ger number of residues in a segment
         :return:
         """
 
-        tmp = self.table_sum()[self.segid]["BB"]  # BB will have all residue interactions, so resnum will be intact
-        res_idx = tmp.index.get_level_values("resI").unique().tolist()
-        nres = len(res_idx)
-        return res_idx, nres
+        tab = self.get_mean_table()
+        if isinstance(tab, pd.Series) and isinstance(tab.index, pd.core.index.MultiIndex):
+            tab = tab.reset_index()
+        rmat = tab.drop(["segidI", "segidJ", "resnI", "resnJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0)
+        return rmat.index.values
 
     def molg_mat(self, tab=None):
         """
@@ -88,13 +97,10 @@ class MGCore(BaseMG):
             diag_val = tab.groupby("resI").sum().drop("resJ", axis=1).values.ravel()
         else:
             diag_val = tab.groupby("resI").sum().values.ravel()
-        ref_mat = tab.drop(["segidI", "segidJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0).values
-        row, col = np.diag_indices(ref_mat.shape[0])
-        ref_mat[row, col] = diag_val
-        mat = pd.DataFrame(ref_mat, index=np.unique(tab.resI.values), columns=np.unique(tab.resI.values))
-        npos = tab.resI.unique().size
-        if npos != self.nres:
-            mat = mat.reindex(self.res_idx).T.reindex(self.res_idx).replace(np.nan, 0.0)
+        rmat = tab.drop(["segidI", "segidJ", "resnI", "resnJ"], axis=1).set_index(['resI', 'resJ']).unstack(fill_value=0)
+        ref_mat = rmat.values
+        ref_mat[[np.arange(rmat.shape[0])] * 2] = diag_val
+        mat = pd.DataFrame(ref_mat, index=rmat.index.values, columns=rmat.index.values)
         return mat
 
     def eigh_decom(self, kmat=None):
@@ -140,14 +146,12 @@ class MGCore(BaseMG):
         stab = self.get_sum_table()
         nwind = stab.columns.size
         npos = stab.index.get_level_values('resI').unique().size
-        t_mat = np.zeros((nwind, self.nres, self.nres))
-        t_vec = np.zeros((nwind, self.nres, self.nres))
-        t_val = np.zeros((nwind, self.nres))
-
+        t_mat = np.zeros((nwind, npos, npos))
+        t_vec = np.zeros((nwind, npos, npos))
+        t_val = np.zeros((nwind, npos))
+        assert npos == len(self.get_resids()), "Mismatch in number of residues"
         for i in range(nwind):
             time_mat = self.molg_mat(tab=stab.iloc[:, i])
-            if npos != self.nres:
-                time_mat = time_mat.reindex(self.res_idx).T.reindex(self.res_idx).replace(np.nan, 0.0)
             tval, tvec = self.eigh_decom(time_mat)
             t_val[i, :] = tval
             t_vec[i, :, :] = tvec
@@ -195,7 +199,7 @@ class MGCore(BaseMG):
         logging.info("Calculating Persistence")
         for m in range(dot_mat.shape[1]):
             # sort and get max value (ie) last element
-            ps = [sorted(np.square(dot_mat[w][m]))[-1] for w in range(dot_mat.shape[0])]
+            ps = [sorted(abs(dot_mat[w][m]))[-1] for w in range(dot_mat.shape[0])]
             mpers.append(np.asarray(ps).mean())
         return mpers
 
