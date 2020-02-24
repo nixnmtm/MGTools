@@ -199,8 +199,7 @@ class CheckPersDist(object):
             else:
                 data = [value for value in self.pers if random.random() >= self.exclude / 100]
 
-            results = Parallel(n_jobs=self.processes)(
-                delayed(self.check)(data, fct, self.verbose) for fct in self.cdfs.keys())
+            results = Parallel(n_jobs=self.processes)(delayed(self.check)(data, fct, self.verbose) for fct in self.cdfs.keys())
 
             for res in results:
                 key, p, D = res

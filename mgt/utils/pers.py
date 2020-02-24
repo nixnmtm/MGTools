@@ -9,7 +9,7 @@ from matplotlib.ticker import FormatStrFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mgt.utils.dist import CheckPersDist
 from mgt.extras import significant_residues
-
+from matplotlib.ticker import FixedLocator
 
 class PersistenceUtils(object):
     """
@@ -49,14 +49,14 @@ class PersistenceUtils(object):
             mode_cut = (np.where(self.eigenval[self.eigenval > q3])[0] + 1).max()
             return q3, mode_cut
 
-    def get_residues_persmodes(self, vec, pcut_range, wt_cut_range):
+    def get_residues_persmodes(self, vec, pcut_range, wt_cut_range, resids):
         # populate dictionary with residues based on cutoffs
         pcut_range = [str(np.round(i, 2)) for i in pcut_range]
         res_dict = dict()
         for pc in pcut_range:
             res_dict[pc] = dict()
             for cut in wt_cut_range:
-                res = significant_residues(vec, self.get_pers_modes(pcut_range=pcut_range)[pc], cut)
+                res = significant_residues(vec, self.get_pers_modes(pcut_range=pcut_range)[pc], cut, resids=resids)
                 res_dict[pc][cut] = res
         return res_dict
 
@@ -65,7 +65,7 @@ class PersistenceUtils(object):
     #########################################################################################
     @staticmethod
     def choose_subplot_dimensions(k):
-        if k < 7:
+        if k < 5:
             return k, 2
         else:
             # I've chosen to have a maximum of 3 columns
@@ -141,13 +141,13 @@ class PersistenceUtils(object):
         ax2.tick_params(labelsize=fontsize-15)
 
         eigcutline, _ = self.get_eigval_outliers()
-        ax2.axvline(eigcutline, color='r', linestyle='--')
+        ax2.axhline(eigcutline, color='r', linestyle='--')
         ax_box2.axvline(eigcutline, color='r', linestyle='--')
         ax_hist2.axvline(eigcutline, color='r', linestyle='--')
         plt.tight_layout()
         plt.show()
 
-    def plot_eigpers(self, eigcut="outliers", cdf_cut=0.90, figsize=(9, 5), tick_fontsize=20,
+    def plot_eigpers(self, cdf_cut=0.90, figsize=(9, 5), tick_fontsize=20,
                      label_fontsize=32, show_cutoff=True, save_fig=False, title=None):
         """
         Eigenvalue boxplot, persistance vs eigenvalue scatter plot and persistance distribution in a single plot and
@@ -204,16 +204,19 @@ class PersistenceUtils(object):
             Q3 = np.quantile(self.eigenval, 0.75)
             max_whisker = Q3 + (1.5 * scipy.stats.iqr(self.eigenval))  # Q3+1.5IQR
             maxwhisk = self.eigenval[self.eigenval <= max_whisker].max()
-            if eigcut == "outliers":
+            _q3 = self.eigenval[self.eigenval <= Q3].max()
+            if self.eigcut == "outliers":
                 ax_scat2.axvline(maxwhisk, color='r', linestyle='--')
                 axBox.axvline(maxwhisk, color='r', linestyle='--')
-            if eigcut == "Q3":
+                for a in range(len(self.eigenval)):
+                    if self.pers[a] > pcut and self.eigenval[a] > maxwhisk:
+                        ax_scat2.annotate(str(a + 1), xy=(self.eigenval[a], self.pers[a]), fontsize=14)
+            if self.eigcut == "Q3":
                 ax_scat2.axvline(Q3, color='r', linestyle='--')
                 axBox.axvline(Q3, color='r', linestyle='--')
-
-            for a in range(len(self.eigenval)):
-                if self.pers[a] > pcut and self.eigenval[a] > maxwhisk:
-                    ax_scat2.annotate(str(a + 1), xy=(self.eigenval[a], self.pers[a]), fontsize=14)
+                for a in range(len(self.eigenval)):
+                    if self.pers[a] > pcut and self.eigenval[a] > _q3:
+                        ax_scat2.annotate(str(a + 1), xy=(self.eigenval[a], self.pers[a]), fontsize=14)
         f2.tight_layout()
         if title:
             f2.suptitle(title, fontsize=label_fontsize)
@@ -225,7 +228,8 @@ class PersistenceUtils(object):
             f2.savefig("./" + filename + ".png", dpi=300)
 
     def plot_persmodes(self, vec, allmodes, cdf_cut=0.90, wt_cut=0.15, pdbaa=None, fontsize=16,
-                       title="Persistent Eigenmodes"):
+                       title="Persistent Eigenmodes", tick_rotation='horizontal',
+                       tickpositions=None, xticklabels=None, savepath=None):
 
         legend_properties = {'weight': 'bold', 'size': fontsize}
         font = {'family': 'Arial', 'weight': 'bold', 'size': fontsize}
@@ -246,18 +250,32 @@ class PersistenceUtils(object):
                     ax.annotate(str(p), xy=(k, l), rotation=90)
                     aa_residues.append(str(p))
                     cont_residues.append(str(k))
-            print(f"{aa_residues} <--> {cont_residues}")
+            print(f"Mode {m+1} : {aa_residues} <--> {cont_residues}")
             ax.set_xlabel("Residues", fontdict=font)
             ax.set_ylabel("Weight", fontdict=font)
             ax.legend(loc='best', frameon=False, prop=legend_properties)
-            xticklab = [str(indx) for indx in range(0, len(self.eigenval))][::50]
+
+            if xticklabels is None:
+                xticklab = [i[1:] for i in pdbaa][::30]
+                xticks = [indx for indx in range(0, len(self.eigenval))][::30]
+                ax.set_xticks(xticks)
+                ax.set_xticklabels(xticklab, fontdict=font_ticks, rotation=tick_rotation)
+            else:
+                try:
+                    xticklab = xticklabels
+                    ax.get_xaxis().set_major_locator(FixedLocator(tickpositions))
+                    ax.set_xticklabels(xticklab, fontdict=font_ticks, rotation=tick_rotation)
+                except IOError as e:
+                    logging.error('Input arguments missing: %s', e)
+
             yticklab = [str(np.round(yindx, 2)) for yindx in np.arange(0.0, 1.0, 0.2)]
-            xticks = [indx for indx in range(0, len(self.eigenval))][::50]
             yticks = [np.round(yindx, 2) for yindx in np.arange(0.0, 1.0, 0.2)]
-            ax.set_xticks(xticks)
             ax.set_yticks(yticks)
-            ax.set_xticklabels(xticklab, fontdict=font_ticks)
+
             ax.set_yticklabels(yticklab, fontdict=font_ticks)
         fig.suptitle(title, fontsize=fontsize)
         fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        if savepath:
+            fig.savefig(savepath, dpi=300)
+
         plt.show()

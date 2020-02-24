@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/MGTools.iml" filepath="$PROJECT_DIR$/.idea/MGTools.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../python-fluctmatch/.idea/python-fluctmatch.iml" filepath="$PROJECT_DIR$/../python-fluctmatch/.idea/python-fluctmatch.iml" />
     </modules>
   </component>
 </project>

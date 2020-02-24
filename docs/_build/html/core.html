@@ -37,7 +37,7 @@
 <h1>Core Modules of MGT<a class="headerlink" href="#core-modules-of-mgt" title="Permalink to this headline">¶</a></h1>
 <dl class="simple">
 <dt><a class="reference internal" href="#module-core" title="core"><code class="xref py py-mod docutils literal notranslate"><span class="pre">core</span></code></a> module consists of:</dt><dd><ol class="arabic simple">
-<li><p>The base <a class="reference internal" href="#core.BaseMG" title="core.BaseMG"><code class="xref py py-class docutils literal notranslate"><span class="pre">core.BaseMG</span></code></a> that preprocess the fluctuogram data.</p></li>
+<li><p>The base <code class="xref py py-class docutils literal notranslate"><span class="pre">core.BaseMG</span></code> that preprocess the fluctuogram data.</p></li>
 <li><p>The core <code class="xref py py-class docutils literal notranslate"><span class="pre">core.CoreMG</span></code> that builds the molecular graph matrix and decompose it.</p></li>
 </ol>
 </dd>
@@ -45,131 +45,30 @@
 <p>To analyze inter-segments, use the <code class="docutils literal notranslate"><span class="pre">interSegs</span></code> argument with tuple of two segments. If the residue ids in two segments
 overlap, the residue ids are renamed using <code class="xref py py-func docutils literal notranslate"><span class="pre">_refactor_resid()</span></code> for correct MG matrix creation.</p>
 <span class="target" id="module-core"></span><dl class="class">
-<dt id="core.BaseMG">
-<em class="property">class </em><code class="sig-prename descclassname">core.</code><code class="sig-name descname">BaseMG</code><span class="sig-paren">(</span><em class="sig-param">filename: str</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.BaseMG" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Base class for building Coupling strength Table sum and mean for all segids including
-their secondary structure splits.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>filename</strong> -- Name of the file to be loaded</p>
-</dd>
-<dt class="field-even">Key ressep</dt>
-<dd class="field-even"><p>residue separation( &gt;= I,I + ressep), (default=3)</p>
-</dd>
-<dt class="field-odd">Key interSegs</dt>
-<dd class="field-odd"><p>two segments names for inter segment analysis, should be a tuple</p>
-</dd>
-<dt class="field-even">Key input_path</dt>
-<dd class="field-even"><p>path of file input, should be a str, if not given searches filename in Inputs folder</p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p></p>
-</dd>
-<dt class="field-even">Example</dt>
-<dd class="field-even"><p></p></dd>
-</dl>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">src.core</span> <span class="kn">import</span> <span class="n">BaseMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="n">BaseMG</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;holo_pdz.txt.bz2&quot;</span><span class="p">,</span> <span class="n">ressep</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">table_mean</span><span class="p">()[</span><span class="s2">&quot;CRPT&quot;</span><span class="p">][</span><span class="s2">&quot;BB&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
-<span class="go">segidI  resI  segidJ  resJ</span>
-<span class="go">CRPT    5     CRPT    6       169.063123</span>
-<span class="go">                      7         3.482413</span>
-<span class="go">                      8         0.139217</span>
-<span class="go">                      9         0.007373</span>
-<span class="go">        6     CRPT    5       169.063123</span>
-<span class="go">dtype: float64</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="core.BaseMG.load_table">
-<code class="sig-name descname">load_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="headerlink" href="#core.BaseMG.load_table" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load Coupling Strength DataFrame</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>Processed Coupling Strength DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.BaseMG.sepres">
-<code class="sig-name descname">sepres</code><span class="sig-paren">(</span><em class="sig-param">table</em><span class="sig-paren">)</span> &#x2192; object<a class="headerlink" href="#core.BaseMG.sepres" title="Permalink to this definition">¶</a></dt>
-<dd><p>Residue Separation</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>table</strong> -- table for sequence separation</p></li>
-<li><p><strong>ressep</strong> -- sequence separation to include (eg.  &gt;= I,I + ressep), default is I,I+3)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>DataFrame after separation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.BaseMG.splitSS">
-<code class="sig-name descname">splitSS</code><span class="sig-paren">(</span><em class="sig-param">write: bool = False</em><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#core.BaseMG.splitSS" title="Permalink to this definition">¶</a></dt>
-<dd><p>Split based on secondary structures.</p>
-<div class="line-block">
-<div class="line">BB - Backbone-Backbone Interactions</div>
-<div class="line">BS - Backbone-Sidechain Interactions</div>
-<div class="line">SS - Sidechain-Sidehain Interactions</div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> -- Dataframe to split. If None, df initialized during class instance is taken</p></li>
-<li><p><strong>write</strong> -- write after splitting</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>dict of split DataFrames</p>
-</dd>
-</dl>
-<div class="admonition-todo admonition" id="id1">
-<p class="admonition-title">Todo</p>
-<ol class="arabic simple">
-<li><p>Try to include ion interaction with SS</p></li>
-<li><p>Remove ion interactions from BS</p></li>
-</ol>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.BaseMG.table_mean">
-<code class="sig-name descname">table_mean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.BaseMG.table_mean" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return Mean of table</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>dict of mean tables, format as table_sum()</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="core.BaseMG.table_sum">
-<code class="sig-name descname">table_sum</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.BaseMG.table_sum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the sum table based on the self.grouping</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>dict of sum tables</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
 <dt id="core.MGCore">
-<em class="property">class </em><code class="sig-prename descclassname">core.</code><code class="sig-name descname">MGCore</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#core.BaseMG" title="core.BaseMG"><code class="xref py py-class docutils literal notranslate"><span class="pre">core.BaseMG</span></code></a></p>
-<p>Core Class for Building the Molecular Graph Matrix and Decomposition of it.</p>
+<em class="property">class </em><code class="sig-prename descclassname">core.</code><code class="sig-name descname">MGCore</code><span class="sig-paren">(</span><em class="sig-param">table</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">mgt.base.BaseMG</span></code></p>
+<p>Core Class for The Molecular Graph Theory Analysis</p>
+<dl class="method">
+<dt id="core.MGCore.calc_persistence">
+<code class="sig-name descname">calc_persistence</code><span class="sig-paren">(</span><em class="sig-param">dot_mat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.calc_persistence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate Persistence of eigenmodes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dot_mat</strong> -- matrix with dot product values of each mode.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>persistence of each mode</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="method">
 <dt id="core.MGCore.eigh_decom">
-<code class="sig-name descname">eigh_decom</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.eigh_decom" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">eigh_decom</code><span class="sig-paren">(</span><em class="sig-param">kmat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.eigh_decom" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the eigenvectors and eigenvalues, ordered by decreasing values of the
 eigenvalues, for a real symmetric matrix M. The sign of the eigenvectors is fixed
 so that the mean of its components is non-negative.</p>
@@ -183,7 +82,9 @@ so that the mean of its components is non-negative.</p>
 <dt class="field-odd">Example</dt>
 <dd class="field-odd"><p></p></dd>
 </dl>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">core</span> <span class="o">=</span> <span class="n">MGCore</span><span class="p">(</span><span class="s2">&quot;holo_pdz.txt.bz2&quot;</span><span class="p">,</span> <span class="n">segid</span><span class="o">=</span><span class="s2">&quot;CRPT&quot;</span><span class="p">,</span> <span class="n">sskey</span><span class="o">=</span><span class="s2">&quot;BB&quot;</span><span class="p">,</span> <span class="n">ressep</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">load</span> <span class="o">=</span> <span class="n">LoadKbTable</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;holo_pdz.txt.bz2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kb_aa</span> <span class="o">=</span> <span class="n">load</span><span class="o">.</span><span class="n">load_table</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">core</span> <span class="o">=</span> <span class="n">MGCore</span><span class="p">(</span><span class="n">kb_aa</span><span class="p">,</span> <span class="n">segid</span><span class="o">=</span><span class="s2">&quot;CRPT&quot;</span><span class="p">,</span> <span class="n">sskey</span><span class="o">=</span><span class="s2">&quot;BB&quot;</span><span class="p">,</span> <span class="n">ressep</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">egval</span><span class="p">,</span> <span class="n">egvec</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">eigh_decom</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">egval</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">egvec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </pre></div>
@@ -191,28 +92,64 @@ so that the mean of its components is non-negative.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="core.MGCore.load_table">
-<code class="sig-name descname">load_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="headerlink" href="#core.MGCore.load_table" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load Coupling Strength DataFrame</p>
+<dt id="core.MGCore.evec_dotpdts">
+<code class="sig-name descname">evec_dotpdts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.evec_dotpdts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate dot products between eigen vectors of decomposed mean mgt matrix and each window mgt matrix</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{M_{ij} = {U^r_i \cdot U^w_j}}\]</div>
+<p>r - reference mean matrix eigen vectors</p>
+<p>w - windows eigen vectors</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.get_mean_table">
+<code class="sig-name descname">get_mean_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.get_mean_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get mean table of specific secondary structure and segid</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>Processed Coupling Strength DataFrame</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segid</strong> -- segid</p></li>
+<li><p><strong>sskey</strong> -- secondary structure key</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataframe of mean table</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
-<dt id="core.MGCore.mg_mat">
-<code class="sig-name descname">mg_mat</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.mg_mat" title="Permalink to this definition">¶</a></dt>
+<dt id="core.MGCore.get_nres_seg">
+<code class="sig-name descname">get_nres_seg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.get_nres_seg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ger number of residues in a segment
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.get_sum_table">
+<code class="sig-name descname">get_sum_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.get_sum_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get table sum of specific secondary structure and segid</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segid</strong> -- segid</p></li>
+<li><p><strong>sskey</strong> -- secondary structure key</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataframe of sum table</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.molg_mat">
+<code class="sig-name descname">molg_mat</code><span class="sig-paren">(</span><em class="sig-param">tab=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.molg_mat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build MGT Matrix.
 | Input should be a <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.Series</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> -- Mean series or window series</p></li>
-<li><p><strong>seg</strong> -- segment to convert, inter-segmets can be given as tuple --&gt; eg:(&quot;PDZ3&quot;, &quot;CRPT&quot;)</p></li>
-<li><p><strong>sptkey</strong> -- splitkey of segment to convert (eg: BB)</p></li>
-</ul>
+<dd class="field-odd"><p><strong>tab</strong> -- Mean series or window series</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>MGT matrix, type dataframe</p>
@@ -220,8 +157,10 @@ so that the mean of its components is non-negative.</p>
 <dt class="field-odd">Example</dt>
 <dd class="field-odd"><p></p></dd>
 </dl>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">core</span> <span class="o">=</span> <span class="n">MGCore</span><span class="p">(</span><span class="s2">&quot;holo_pdz.txt.bz2&quot;</span><span class="p">,</span> <span class="n">segid</span><span class="o">=</span><span class="s2">&quot;CRPT&quot;</span><span class="p">,</span> <span class="n">sskey</span><span class="o">=</span><span class="s2">&quot;BB&quot;</span><span class="p">,</span> <span class="n">ressep</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">mg_mat</span><span class="p">())</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">load</span> <span class="o">=</span> <span class="n">LoadKbTable</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;holo_pdz.txt.bz2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kb_aa</span> <span class="o">=</span> <span class="n">load</span><span class="o">.</span><span class="n">load_table</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">core</span> <span class="o">=</span> <span class="n">MGCore</span><span class="p">(</span><span class="n">kb_aa</span><span class="p">,</span> <span class="n">segid</span><span class="o">=</span><span class="s2">&quot;CRPT&quot;</span><span class="p">,</span> <span class="n">sskey</span><span class="o">=</span><span class="s2">&quot;BB&quot;</span><span class="p">,</span> <span class="n">ressep</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">molg_mat</span><span class="p">())</span>
 <span class="go">            5           6           7           8           9</span>
 <span class="go">5  172.692126  169.063123    3.482413    0.139217    0.007373</span>
 <span class="go">6  169.063123  364.543558  193.112981    2.314533    0.052921</span>
@@ -251,7 +190,7 @@ so that the mean of its components is non-negative.</p>
 
 <dl class="method">
 <dt id="core.MGCore.splitSS">
-<code class="sig-name descname">splitSS</code><span class="sig-paren">(</span><em class="sig-param">write: bool = False</em><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#core.MGCore.splitSS" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">splitSS</code><span class="sig-paren">(</span><em class="sig-param">write: bool = False</em>, <em class="sig-param">exclude_disul: bool = True</em><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#core.MGCore.splitSS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Split based on secondary structures.</p>
 <div class="line-block">
 <div class="line">BB - Backbone-Backbone Interactions</div>
@@ -263,13 +202,14 @@ so that the mean of its components is non-negative.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>df</strong> -- Dataframe to split. If None, df initialized during class instance is taken</p></li>
 <li><p><strong>write</strong> -- write after splitting</p></li>
+<li><p><strong>exclude_disul</strong> -- exclude disulphide interactions (default: True)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>dict of split DataFrames</p>
 </dd>
 </dl>
-<div class="admonition-todo admonition" id="id2">
+<div class="admonition-todo admonition" id="id1">
 <p class="admonition-title">Todo</p>
 <ol class="arabic simple">
 <li><p>Try to include ion interaction with SS</p></li>
@@ -277,6 +217,11 @@ so that the mean of its components is non-negative.</p>
 </ol>
 </div>
 </dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.table_intraseg">
+<code class="sig-name descname">table_intraseg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.table_intraseg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="core.MGCore.table_mean">
@@ -298,6 +243,19 @@ so that the mean of its components is non-negative.</p>
 <dd class="field-odd"><p>dict of sum tables</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.windows_eigen_decom">
+<code class="sig-name descname">windows_eigen_decom</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.windows_eigen_decom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return csm_mat, eigenVectors and eigenValues of all windows</p>
+<div class="admonition-todo admonition" id="id2">
+<p class="admonition-title">Todo</p>
+<ol class="arabic simple">
+<li><p>Check for smarter ways to speed it up</p></li>
+<li><p>So far this is the best way</p></li>
+</ol>
+</div>
 </dd></dl>
 
 </dd></dl>

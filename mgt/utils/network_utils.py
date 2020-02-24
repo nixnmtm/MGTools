@@ -45,7 +45,7 @@ class MGNetwork(object):
 
         return A_mat, D_mat, Lap_mat, norm_Lap
 
-    def get_interacting_edges(self, nodes, kbcut, intra=False):
+    def get_interacting_edges(self, G, nodes, kbcut, intra=False):
         """
         Get edgelists for a set of nodes, if interactions are present
 
@@ -57,7 +57,6 @@ class MGNetwork(object):
 
         """
         edgelist = list()
-        G = self.gx
         if intra:
             for x in combinations(nodes, 2):
                 x = (str(x[0]), str(x[1]))
@@ -106,34 +105,8 @@ class MGNetwork(object):
         plt.title("MGT Network Visualization")
         plt.show()
 
-    def get_interacting_edges(self, G, nodes, kbcut, intra=False):
-        """
-        Get edgelists for a set of nodes, if interactions are present
-
-        :param G: graph object
-        :param nodes: list of nodes to get combinations
-        :param kbcut: kb cut off
-        :param intra: if True: get only intra interacting edges for given nodes
-                        False: get all interacting edges of the given nodes
-
-        """
-        edgelist = list()
-        if intra:
-            for x in combinations(nodes, 2):
-                x = (str(x[0]), str(x[1]))
-                if x in G.edges():
-                    if G.get_edge_data(x[0], x[1])["weight"] > kbcut:
-                        edgelist.append(x)
-        else:
-            for i in nodes:
-                for j in G.nodes():
-                    x = (str(i), str(j))
-                    if x in G.edges():
-                        if G.get_edge_data(x[0], x[1])["weight"] > kbcut:
-                            edgelist.append(x)
-        return edgelist
-
-    def draw_sub_protein_graph(self, G, resids, col, res_overlap=None, kbcut=0., intra=False, prefix=None):
+    def draw_sub_protein_graph(self, G, resids, col, res_overlap=None, kbcut=0., intra=False, prefix=None,
+                               node_size=750, fontweight="normal", fontsize=24):
         """
         Draw 2D protein graph using NetworkX, only interactions between given resids > kbcut.
 
@@ -157,12 +130,12 @@ class MGNetwork(object):
         :type prefix: string
 
         """
-        nx.draw_networkx_nodes(G, pos=xypos(G), node_size=750, edgecolors='k', alpha=0.5)
-        nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=resids, node_size=750,
+        nx.draw_networkx_nodes(G, pos=xypos(G), node_size=node_size, edgecolors='k', alpha=0.5)
+        nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=resids, node_size=node_size,
                                node_color=col, edgecolors='k', alpha=1)
         if not res_overlap is None:
-            nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=res_overlap, node_size=2000,
-                                   node_color=col, edgecolors='k', alpha=1)
+            nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=res_overlap, node_size=node_size*2.667,
+                                   node_color=col, edgecolors='k', alpha=1)  # 2.667*750=~2000
         # seperate edgelists
         backbone = [(u, v) for (u, v, d) in G.edges(data=True) if d['kind'] == 'backbone']
         drawedges = self.get_interacting_edges(G, resids, kbcut, intra=intra)
@@ -177,7 +150,7 @@ class MGNetwork(object):
 
         # here also we can change the node label using labels argument
         # (check networkx documentation for draw_networkx_labels)
-        if not res_overlap is None:
+        if res_overlap is not None:
             norm_label = {}
             overlap_label = {}
             for node in G.nodes():
@@ -191,13 +164,13 @@ class MGNetwork(object):
                                    edgelist=overlap_node_edges, edge_color=overlap_weights,
                                    width=7, style='dotted',
                                    edge_cmap=plt.cm.cool, edge_vmin=1.0, edge_vmax=np.asarray(weights).max())
-            nx.draw_networkx_labels(G, pos=xypos(G), labels=norm_label, font_size=12)
-            nx.draw_networkx_labels(G, pos=xypos(G), labels=overlap_label, font_size=14, font_weight='bold')
+            nx.draw_networkx_labels(G, pos=xypos(G), labels=norm_label, font_size=fontsize, font_weight=fontweight)
+            nx.draw_networkx_labels(G, pos=xypos(G), labels=overlap_label, font_size=fontsize+2, font_weight=fontweight)
         else:
-            nx.draw_networkx_labels(G, pos=xypos(G), font_size=12)
+            nx.draw_networkx_labels(G, pos=xypos(G), font_size=fontsize, font_weight=fontweight)
 
         cb = plt.colorbar(edges)
-        cb.set_label(label=r'Coupling Strength''\n''$kcal/mol/A^2$', weight='bold')
+        cb.set_label(label=r'Coupling Strength''\n''$kcal/mol/A^2$', weight=fontweight)
         ax = cb.ax
         cblabel = ax.yaxis.label
         cb.ax.tick_params(axis='y', labelsize=30)
@@ -206,7 +179,7 @@ class MGNetwork(object):
         if prefix is None:
             pass
         else:
-            plt.title("{} Network Visualization".format(prefix))
+            plt.title("{} Network Visualization".format(prefix), fontsize=30)
         plt.show()
 
     def add_backbone(self, data, chain_id=None, node_name="resid"):
@@ -314,7 +287,7 @@ def retrieve_name(var):
     return [var_name for var_name, var_val in callers_local_vars if var_val is var]
 
 
-def _edges(mat, inc_mat=False):
+def _edges(mat, inc_mat=False, resids=None):
     """
     Create weighted edgelists from Kb values
 
@@ -325,12 +298,16 @@ def _edges(mat, inc_mat=False):
     :rtype: list
     """
 
+    if resids is not None:
+        mat = mat.reindex(resids).T.reindex(resids).replace(np.nan, 0.0)
     amat = mat.unstack()
     Npos = mat.shape[0]
     count = 0
     edge_wgt = []
-    for i in range(1, Npos):
-        for j in range(1, Npos):
+    for i in resids:
+        for j in resids:
+            #             if not amat.index.isin([(i, j)]).any():
+            #                 continue
             if amat[i, j] > 0. and i != j:
                 if inc_mat:
                     edge_wgt.append([i, j, np.sqrt(amat[i, j])])  # weight = sqrt of coupling strength
@@ -338,5 +315,4 @@ def _edges(mat, inc_mat=False):
                     edge_wgt.append([str(i), str(j), amat[i, j]])  # actual weight (exact coupling strength)
                 count += 1
     # print "Number of edges is {}".format(count/2)
-
     return edge_wgt

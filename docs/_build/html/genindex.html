@@ -37,18 +37,18 @@
 
 <div class="genindex-jumpbox">
  <a href="#A"><strong>A</strong></a>
- | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
  | <a href="#E"><strong>E</strong></a>
  | <a href="#G"><strong>G</strong></a>
- | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#W"><strong>W</strong></a>
  | <a href="#X"><strong>X</strong></a>
  
 </div>
@@ -60,16 +60,12 @@
   </ul></td>
 </tr></table>
 
-<h2 id="B">B</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="core.html#core.BaseMG">BaseMG (class in core)</a>
-</li>
-  </ul></td>
-</tr></table>
-
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="core.html#core.MGCore.calc_persistence">calc_persistence() (core.MGCore method)</a>
+</li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="core.html#module-core">core (module)</a>
 </li>
@@ -94,6 +90,10 @@
       <li><a href="core.html#core.MGCore.eigh_decom">eigh_decom() (core.MGCore method)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="core.html#core.MGCore.evec_dotpdts">evec_dotpdts() (core.MGCore method)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="G">G</h2>
@@ -101,35 +101,29 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="network_utils.html#network_utils.MGNetwork.get_interacting_edges">get_interacting_edges() (network_utils.MGNetwork method)</a>
 </li>
+      <li><a href="core.html#core.MGCore.get_mean_table">get_mean_table() (core.MGCore method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="core.html#core.MGCore.get_nres_seg">get_nres_seg() (core.MGCore method)</a>
+</li>
+      <li><a href="core.html#core.MGCore.get_sum_table">get_sum_table() (core.MGCore method)</a>
+</li>
       <li><a href="network_utils.html#network_utils.MGNetwork.graph_mtrx">graph_mtrx() (network_utils.MGNetwork method)</a>
 </li>
-  </ul></td>
-</tr></table>
-
-<h2 id="L">L</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="core.html#core.BaseMG.load_table">load_table() (core.BaseMG method)</a>
-
-      <ul>
-        <li><a href="core.html#core.MGCore.load_table">(core.MGCore method)</a>
-</li>
-      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="core.html#core.MGCore.mg_mat">mg_mat() (core.MGCore method)</a>
+      <li><a href="core.html#core.MGCore">MGCore (class in core)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="core.html#core.MGCore">MGCore (class in core)</a>
-</li>
       <li><a href="network_utils.html#network_utils.MGNetwork">MGNetwork (class in network_utils)</a>
+</li>
+      <li><a href="core.html#core.MGCore.molg_mat">molg_mat() (core.MGCore method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -161,41 +155,43 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="core.html#core.BaseMG.sepres">sepres() (core.BaseMG method)</a>
-
-      <ul>
-        <li><a href="core.html#core.MGCore.sepres">(core.MGCore method)</a>
+      <li><a href="core.html#core.MGCore.sepres">sepres() (core.MGCore method)</a>
 </li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="core.html#core.BaseMG.splitSS">splitSS() (core.BaseMG method)</a>
-
-      <ul>
-        <li><a href="core.html#core.MGCore.splitSS">(core.MGCore method)</a>
+      <li><a href="core.html#core.MGCore.splitSS">splitSS() (core.MGCore method)</a>
 </li>
-      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="core.html#core.BaseMG.table_mean">table_mean() (core.BaseMG method)</a>
-
-      <ul>
-        <li><a href="core.html#core.MGCore.table_mean">(core.MGCore method)</a>
+      <li><a href="core.html#core.MGCore.table_intraseg">table_intraseg() (core.MGCore method)</a>
 </li>
-      </ul></li>
+      <li><a href="core.html#core.MGCore.table_mean">table_mean() (core.MGCore method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="core.html#core.BaseMG.table_sum">table_sum() (core.BaseMG method)</a>
-
-      <ul>
-        <li><a href="core.html#core.MGCore.table_sum">(core.MGCore method)</a>
+      <li><a href="core.html#core.MGCore.table_sum">table_sum() (core.MGCore method)</a>
 </li>
-      </ul></li>
       <li><a href="network_utils.html#network_utils.to_commaseparray">to_commaseparray() (in module network_utils)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="utils.html#module-utils">utils (module)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="core.html#core.MGCore.windows_eigen_decom">windows_eigen_decom() (core.MGCore method)</a>
 </li>
   </ul></td>
 </tr></table>
