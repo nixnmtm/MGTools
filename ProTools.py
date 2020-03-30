@@ -70,3 +70,19 @@ class ProTools(object):
             _resnames = self.univ.select_atoms("segid {} and not (resname HOH)".format(segid)).residues.resnames
             protseg[segid] = dict(zip(_resids, _resnames))
         return protseg, _resids
+
+
+def convertTraj(struc, traj, writeformat="dcd", selection=None):
+    u = mda.Universe(struc, traj)
+    if selection is None:
+        group = u.select_atoms("protein")
+    else:
+        group = u.select_atoms(selection)
+    with mda.Writer("trajectory."+writeformat, group.n_atoms) as W:
+        for ts in u.trajectory:
+            W.write(group)
+
+
+path = "/Volumes/Nix-jwchu/allostery/gmx_runs/rna_3cm5/extra_equil/"
+strucpath = "/Volumes/Nix-jwchu/allostery/gmx_runs/rna_3cm5/"
+convertTraj(strucpath+"3cm5_rna.xpolr.psf", path+"prod.2ms.align_dt_400.xtc")

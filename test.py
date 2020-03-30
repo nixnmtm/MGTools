@@ -183,21 +183,21 @@ from mgt.base import BaseMG
 
 ######## DISTMAT SNIPPET ###########
 import MDAnalysis as mda
-# from src.fluctmatch.fluctmatch import utils as fmutils
-# from MDAnalysis.lib.distances import distance_array
-# from src.fluctmatch.models.core import modeller
+from src.fluctmatch.fluctmatch import utils as fmutils
+from MDAnalysis.lib.distances import distance_array
+from src.fluctmatch.models.core import modeller
+
+u = modeller(("/Users/nix/mphysics/protease/fluct/holo/10/data/985/fluctmatch.xplor.psf"), "/Users/nix/mphysics/protease/fluct/holo/10/data/985/cg.dcd",
+             com="com", model=["ENM"])
+positions = fmutils.AverageStructure(u.atoms).run().result
+distmat = distance_array(positions, positions, backend="OpenMP")
+print(distmat.shape)
+print(distmat)
+bins = np.arange(1., 10, 0.5)
+import numpy as np
+np.savetxt("dist_mat_w985.txt", distmat)
+
+# import mgt.extras as ex
+# a = ex.get_pdb_resid("./PDB/3TGI.pdb")
 #
-# u = modeller(("/Users/nix/mphysics/protease/fluct/holo/10/data/30/fluctmatch.xplor.psf"), "/Users/nix/mphysics/protease/fluct/holo/10/data/30/cg.dcd",
-#              com="com", model=["ENM"])
-# positions = fmutils.AverageStructure(u.atoms).run().result
-# distmat = distance_array(positions, positions, backend="OpenMP")
-# print(distmat.shape)
-# print(distmat)
-# bins = np.arange(1., 10, 0.5)
-# import numpy as np
-# np.savetxt("dist_mat_w30.txt", distmat)
-
-import mgt.extras as ex
-a = ex.get_pdb_resid("./PDB/3TGI.pdb")
-
-print(np.insert(a, 223, "CA"))
+# print(np.insert(a, 223, "CA"))
