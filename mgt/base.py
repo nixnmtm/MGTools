@@ -115,12 +115,12 @@ class BaseMG(object):
                                 & ((tmp["J"] == 'N') | (tmp["J"] == 'O') | (tmp["J"] == 'ions'))]
 
             # BACKBONE-SIDECHAIN
-            BS = tmp[((tmp["I"] == "N") | (tmp["I"] == 'O') | (tmp["I"] == "ions")) & (tmp["J"] == 'CB')]
-            SB = tmp[(tmp["I"] == 'CB') & ((tmp["J"] == "N") | (tmp["J"] == 'O') | (tmp["J"] == "ions"))]
+            BS = tmp[((tmp["I"] == "N") | (tmp["I"] == 'O')) & (tmp["J"] == 'CB')]
+            SB = tmp[(tmp["I"] == 'CB') & ((tmp["J"] == "N") | (tmp["J"] == 'O'))]
             sstable['BS'] = pd.concat([BS, SB], axis=0, ignore_index=True)
 
             # SIDECHAIN-SIDECHAIN
-            tmp_SS = tmp[(tmp["I"] == "CB") & (tmp["J"] == "CB")]
+            tmp_SS = tmp[((tmp["I"] == "CB") | (tmp["I"] == "ions")) & ((tmp["J"] == "CB") | (tmp["J"] == "ions"))]
 
             if self.exclude_disul:
                 tmp_SS = tmp_SS.set_index(self._complete_idx)
@@ -163,9 +163,19 @@ class BaseMG(object):
         df = pd.concat([tmp, diff], axis=0)
         return df
 
+    def get_intraseg_df(self, table, segid):
+        logging.info(f"Getting only the {segid} segment interactions")
+        if isinstance(table.index, pd.core.index.MultiIndex):
+            mask = (table.index.get_level_values("segidI") == segid) & \
+                   (table.index.get_level_values("segidJ") == segid)
+            return table[mask]
+        else:
+            mask = (table["segidI"] == segid) & (table["segidJ"] == segid)
+            return table[mask]
+
     def _nres(self, segid=None, ss=None):
         """
-        Return number of residues in a segmet or inter-segments
+        Return number of residues in a segment or inter-segments
 
         :param segid: segment id
         :param ss: splitkey
@@ -198,7 +208,7 @@ class BaseMG(object):
     def _refactor_resid(self, df):
         """
         Rename the resids of inter segments.
-        | Method should be called only if segments has overlapping resids
+        | Method should be called only if segments have overlapping resids
 
         :param df: Dataframe with overalpping resids in segments
         :return: DataFrame with renamed resids

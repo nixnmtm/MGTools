@@ -11,6 +11,7 @@ from mgt.utils.dist import CheckPersDist
 from mgt.extras import significant_residues
 from matplotlib.ticker import FixedLocator
 
+
 class PersistenceUtils(object):
     """
     Utilities for Persistence analysis
@@ -19,23 +20,32 @@ class PersistenceUtils(object):
     :param eigenval: Eigenvalues of Decomposed Mean MGT matrix
 
     """
-    def __init__(self, eigenval, pers, eigcut="outliers"):
+    def __init__(self, eigenval, pers, eigcut="outliers",
+                 pcut_range=np.arange(0.6, 0.91, 0.01),
+                 wt_cut_range=np.arange(0.01, 0.41, 0.01)):
         self.pers = pers
         self.eigenval = eigenval
         self.eigcut = eigcut
+        self.pcut_range = pcut_range
+        self.wt_cut_range = wt_cut_range
 
     def get_pcutoff(self, cdf_cut):
         cd = CheckPersDist(self.pers)
         pcut, cdf_name = cd.calc_pcutoff(cdf_cut=cdf_cut)
         return pcut, cdf_name
 
-    def get_pers_modes(self, pcut_range):
+    def get_allpers_modes(self):
         _, mode_cut = self.get_eigval_outliers()
-        if all(isinstance(n, str) for n in pcut_range):
-            pcut_range = [float(i) for i in pcut_range]
         allmodes = {str(np.round(pcut, 2)): [i + 1 for i, j in enumerate(self.pers) if j > pcut and i < mode_cut]
-                    for pcut in pcut_range}
+                    for pcut in self.pcut_range}
         return allmodes
+
+    def get_pers_modes(self, pcut):
+        """
+        Get persistence modes of specific pcut
+
+        """
+        return self.get_allpers_modes()[pcut]
 
     def get_eigval_outliers(self):
         # get the point to draw cutoff outline
@@ -49,15 +59,15 @@ class PersistenceUtils(object):
             mode_cut = (np.where(self.eigenval[self.eigenval > q3])[0] + 1).max()
             return q3, mode_cut
 
-    def get_residues_persmodes(self, vec, pcut_range, wt_cut_range, resids):
+    def get_residues_persmodes(self, vec, resids):
         # populate dictionary with residues based on cutoffs
-        pcut_range = [str(np.round(i, 2)) for i in pcut_range]
         res_dict = dict()
-        for pc in pcut_range:
+        for pc in [str(np.round(i, 2)) for i in self.pcut_range]:
             res_dict[pc] = dict()
-            for cut in wt_cut_range:
-                res = significant_residues(vec, self.get_pers_modes(pcut_range=pcut_range)[pc], cut, resids=resids)
-                res_dict[pc][cut] = res
+            for cut in self.wt_cut_range:
+                cut = np.round(cut, 2)
+                res = significant_residues(vec, self.get_allpers_modes()[pc], cut, resids=resids)
+                res_dict[pc][str(cut)] = res
         return res_dict
 
     #########################################################################################
@@ -148,7 +158,8 @@ class PersistenceUtils(object):
         plt.show()
 
     def plot_eigpers(self, cdf_cut=0.90, figsize=(9, 5), tick_fontsize=20,
-                     label_fontsize=32, show_cutoff=True, save_fig=False, title=None):
+                     label_fontsize=32, show_cutoff=True, title=None, savepath=None, annotate=False):
+
         """
         Eigenvalue boxplot, persistance vs eigenvalue scatter plot and persistance distribution in a single plot and
         cutoffs shown
@@ -159,6 +170,7 @@ class PersistenceUtils(object):
         :param label_fontsize:
         :param show_cutoff: show cutoff lines
         :param save_fig: save fig
+        :param annotate: annotate the figure
         :return: Plot figure
 
         """
@@ -166,6 +178,7 @@ class PersistenceUtils(object):
         sns.set(style="ticks")
         f2, ax_scat2 = plt.subplots(1, sharex=True, figsize=figsize)
         sns.scatterplot(self.eigenval, self.pers, ax=ax_scat2)
+
         pcut, cdf_name = self.get_pcutoff(cdf_cut=cdf_cut)
         print(f"p_cut: {pcut} \n cdf_name: {cdf_name}")
         # Append new plots
@@ -182,16 +195,20 @@ class PersistenceUtils(object):
         axBox.tick_params(labelleft=False, left=False, labelsize=tick_fontsize,
                           bottom=False, labelbottom=False, top=False, labeltop=False)
 
-        ax_scat2.set_ylabel(r"$P_i$", fontsize=label_fontsize)
-        ax_scat2.set_xlabel("Eigenvalues", fontsize=label_fontsize)
+        ax_scat2.set_ylabel(r"$r_{\alpha}$", fontsize=label_fontsize)
+        ax_scat2.set_xlabel(r"$\overline{\lambda}_{\alpha}$", fontsize=label_fontsize)
         ax_scat2.tick_params(labelsize=tick_fontsize)
         ax_scat2.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
         ax_scat2.set_ylim(0, 1.2)
 
         # Plot pers distribution with cutoff
-        sns.distplot(self.pers, bins=max(20, int(len(self.eigenval) / 10)), vertical=True, norm_hist=True,
-                     kde=False, fit=eval("scipy.stats." + cdf_name), ax=axHisty, color='k', label=cdf_name)
-        axHisty.legend()
+        if annotate:
+            sns.distplot(self.pers, bins=max(20, int(len(self.eigenval) / 10)), vertical=True, norm_hist=True,
+                         kde=False, fit=eval("scipy.stats." + cdf_name), ax=axHisty, color='k', label=cdf_name)
+            axHisty.legend()
+        else:
+            sns.distplot(self.pers, bins=max(20, int(len(self.eigenval) / 10)), vertical=True, norm_hist=True,
+                         kde=False, fit=eval("scipy.stats." + cdf_name), ax=axHisty, color='k')
         # plot eigenvalue box plot
         sns.boxplot(self.eigenval, ax=axBox)
 
@@ -204,36 +221,46 @@ class PersistenceUtils(object):
             Q3 = np.quantile(self.eigenval, 0.75)
             max_whisker = Q3 + (1.5 * scipy.stats.iqr(self.eigenval))  # Q3+1.5IQR
             maxwhisk = self.eigenval[self.eigenval <= max_whisker].max()
+
             _q3 = self.eigenval[self.eigenval <= Q3].max()
             if self.eigcut == "outliers":
+                print(f"maxwhisk: {maxwhisk}")
                 ax_scat2.axvline(maxwhisk, color='r', linestyle='--')
                 axBox.axvline(maxwhisk, color='r', linestyle='--')
-                for a in range(len(self.eigenval)):
-                    if self.pers[a] > pcut and self.eigenval[a] > maxwhisk:
-                        ax_scat2.annotate(str(a + 1), xy=(self.eigenval[a], self.pers[a]), fontsize=14)
+
+                if annotate:
+                    for a in range(len(self.eigenval)):
+                        if self.pers[a] > pcut and self.eigenval[a] > maxwhisk:
+                            ax_scat2.annotate(str(a + 1), xy=(self.eigenval[a], self.pers[a]), fontsize=14)
+
+                # ev = np.asarray(self.eigenval)
+                # ps = np.asarray(self.pers)
+                # col = np.where((ps > pcut) & (ev > maxwhisk), 'r',
+                #                np.where((ps < pcut) & (ev < maxwhisk), 'gray',
+                #                         np.where(ps < pcut, 'gray', "gray")))
+                # sns.scatterplot(ev, ps, ax=ax_scat2, c=col)
             if self.eigcut == "Q3":
+                print(f"Q3: {Q3}")
                 ax_scat2.axvline(Q3, color='r', linestyle='--')
                 axBox.axvline(Q3, color='r', linestyle='--')
-                for a in range(len(self.eigenval)):
-                    if self.pers[a] > pcut and self.eigenval[a] > _q3:
-                        ax_scat2.annotate(str(a + 1), xy=(self.eigenval[a], self.pers[a]), fontsize=14)
+                if annotate:
+                    for a in range(len(self.eigenval)):
+                        if self.pers[a] > pcut and self.eigenval[a] > _q3:
+                            ax_scat2.annotate(str(a + 1), xy=(self.eigenval[a], self.pers[a]), fontsize=14)
         f2.tight_layout()
         if title:
             f2.suptitle(title, fontsize=label_fontsize)
         plt.show()
-        if save_fig:
-            filename = input("Please enter filename: ")
-            if len(filename) < 1:
-                filename = "eigpers"
-            f2.savefig("./" + filename + ".png", dpi=300)
+        if savepath is not None:
+            f2.savefig(savepath, dpi=300)
 
-    def plot_persmodes(self, vec, allmodes, cdf_cut=0.90, wt_cut=0.15, pdbaa=None, fontsize=16,
+    def plot_persmodes(self, vec, allmodes, cdf_cut=0.90, wt_cut=0.15, pdbaa=None, resids=None, fontsize=12,
                        title="Persistent Eigenmodes", tick_rotation='horizontal',
                        tickpositions=None, xticklabels=None, savepath=None):
 
-        legend_properties = {'weight': 'bold', 'size': fontsize}
-        font = {'family': 'Arial', 'weight': 'bold', 'size': fontsize}
-        font_ticks = {'family': 'Arial', 'weight': 'bold', 'size': fontsize}
+        legend_properties = {'family': 'Arial', 'weight': 'normal', 'size': fontsize-3}
+        font = {'family': 'Arial', 'weight': 'normal', 'size': fontsize+2}
+        font_ticks = {'family': 'Arial', 'weight': 'normal', 'size': fontsize}
 
         pcut, cdf_name = self.get_pcutoff(cdf_cut=cdf_cut)
         fig, axes = self.generate_subplots(len(allmodes[str(pcut)]), row_wise=True)
@@ -243,21 +270,21 @@ class PersistenceUtils(object):
             aa_residues = []
             cont_residues = []
             m = m - 1  # modes are exact indices
-            ax.plot(np.arange(1, len(self.eigenval) + 1), vec[:, m] * vec[:, m], label=r'$U^{%s}$' % (m + 1))
+            ax.plot(resids, vec[:, m] * vec[:, m], label=r'$\overline{\mathbf{\nu}}_{%s}$' % (m + 1))
             ax.axhline(wt_cut, color='k', linestyle='--', linewidth=0.5)
-            for k, p, l in zip(range(1, len(self.eigenval)+1), pdbaa, vec[:, m] * vec[:, m]):
+            for k, p, l in zip(resids, pdbaa, vec[:, m] * vec[:, m]):
                 if l > wt_cut:
-                    ax.annotate(str(p), xy=(k, l), rotation=90)
+                    ax.annotate(str(p), xy=(k, l))
                     aa_residues.append(str(p))
                     cont_residues.append(str(k))
-            print(f"Mode {m+1} : {aa_residues} <--> {cont_residues}")
+            print(f"Mode {m+1} : {aa_residues} <--> {cont_residues}  EigVal:{self.eigenval[m]}")
             ax.set_xlabel("Residues", fontdict=font)
-            ax.set_ylabel("Weight", fontdict=font)
+            ax.set_ylabel(r'$|\overline{\mathbf{\nu}}_{\alpha}|$', fontdict=font)
             ax.legend(loc='best', frameon=False, prop=legend_properties)
 
             if xticklabels is None:
-                xticklab = [i[1:] for i in pdbaa][::30]
-                xticks = [indx for indx in range(0, len(self.eigenval))][::30]
+                xticklab = [i[1:] for i in pdbaa][::50]
+                xticks = [indx for indx in range(0, len(self.eigenval))][::50]
                 ax.set_xticks(xticks)
                 ax.set_xticklabels(xticklab, fontdict=font_ticks, rotation=tick_rotation)
             else:
