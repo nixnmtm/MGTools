@@ -105,37 +105,42 @@ class MGNetwork(object):
         plt.title("MGT Network Visualization")
         plt.show()
 
-    def draw_sub_protein_graph(self, G, resids, col, res_overlap=None, kbcut=0., intra=False, prefix=None,
+    def draw_sub_protein_graph(self, G, resids, col, res_overlap=None, split=None,
+                               kbcut=0., intra=False, prefix=None,
                                node_size=750, fontweight="normal", fontsize=24):
         """
         Draw 2D protein graph using NetworkX, only interactions between given resids > kbcut.
 
-        :param G: graph object with all nodes and edges with necessary attributes
-        :type G: object
+            :param G: graph object with all nodes and edges with necessary attributes
+            :type G: object
 
-        :param resids: resids whose interactions are plotted
-        :param type: list of strings
+            :param resids: resids whose interactions are plotted
+            :param type: list of strings
 
-        :param col: color for resids
-        :type col: string
+            :param col: color for resids
+            :type col: string
 
-        :param kbcut: draw interaction greater than coupling strength cutoff
-        :type kbcut: int
+            :param res_overlap: residues overlapping between BB, BS and SS
+            :type res_overlap: dict
 
-        :param intra: if True, get edgeslists of intra interactions of given resids
-                         False, get all interacting edgelists of given resids (default)
-        :type intra: Boolean
+            :param split: secondary structure split
+            :type split: str
 
-        :param prefix: prefix for title
-        :type prefix: string
+            :param kbcut: draw interaction greater than coupling strength cutoff
+            :type kbcut: int
+
+            :param intra: if True, get edgeslists of intra interactions of given resids
+                             False, get all interacting edgelists of given resids (default)
+            :type intra: Boolean
+
+            :param prefix: prefix for title
+            :type prefix: string
 
         """
-        nx.draw_networkx_nodes(G, pos=xypos(G), node_size=node_size, edgecolors='k', alpha=0.5)
+        nx.draw_networkx_nodes(G, pos=xypos(G), node_size=node_size/3, edgecolors='k', alpha=0.5)
         nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=resids, node_size=node_size,
-                               node_color=col, edgecolors='k', alpha=1)
-        if not res_overlap is None:
-            nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=res_overlap, node_size=node_size*2.667,
-                                   node_color=col, edgecolors='k', alpha=1)  # 2.667*750=~2000
+                               node_color=col, edgecolors='k', alpha=1, label=None)
+
         # seperate edgelists
         backbone = [(u, v) for (u, v, d) in G.edges(data=True) if d['kind'] == 'backbone']
         drawedges = self.get_interacting_edges(G, resids, kbcut, intra=intra)
@@ -148,26 +153,27 @@ class MGNetwork(object):
         edges = nx.draw_networkx_edges(G, pos=xypos(G), edgelist=drawedges, edge_color=weights,
                                        width=4, edge_cmap=plt.cm.cool, edge_vmin=1.0)
 
-        # here also we can change the node label using labels argument
-        # (check networkx documentation for draw_networkx_labels)
         if res_overlap is not None:
-            norm_label = {}
-            overlap_label = {}
-            for node in G.nodes():
-                if node not in res_overlap:
-                    norm_label[node] = node
-                else:
-                    overlap_label[node] = node
-            overlap_node_edges = self.get_interacting_edges(G, overlap_label, kbcut, intra=intra)
-            overlap_weights = [float(G.get_edge_data(n1, n2)["weight"]) for (n1, n2) in overlap_node_edges]
-            nx.draw_networkx_edges(G, pos=xypos(G),
-                                   edgelist=overlap_node_edges, edge_color=overlap_weights,
-                                   width=7, style='dotted',
-                                   edge_cmap=plt.cm.cool, edge_vmin=1.0, edge_vmax=np.asarray(weights).max())
-            nx.draw_networkx_labels(G, pos=xypos(G), labels=norm_label, font_size=fontsize, font_weight=fontweight)
-            nx.draw_networkx_labels(G, pos=xypos(G), labels=overlap_label, font_size=fontsize+2, font_weight=fontweight)
-        else:
-            nx.draw_networkx_labels(G, pos=xypos(G), font_size=fontsize, font_weight=fontweight)
+            if isinstance(res_overlap, dict):
+                for k, v in res_overlap.items():
+                    if k == "s" and (split=="BB" or split=="BS"):
+                        nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=v, node_size=node_size,
+                                               node_color=col, edgecolors='k', alpha=1, node_shape=k)
+                    if k == "D" and (split=="BB" or split=="SS"):
+                        nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=v, node_size=node_size,
+                                               node_color=col, edgecolors='k', alpha=1, node_shape=k)
+                    if k == "p" and (split=="BS" or split=="SS"):
+                        nx.draw_networkx_nodes(G, pos=xypos(G), nodelist=v, node_size=node_size+450,
+                                               node_color=col, edgecolors='k', alpha=1, node_shape=k)
+        sig_res = {}
+        norm_res = {}
+        for node in G.nodes():
+            if node in resids:
+                sig_res[node] = node
+            else:
+                norm_res[node] = node
+        nx.draw_networkx_labels(G, pos=xypos(G), labels=norm_res, font_size=fontsize, font_weight=fontweight)
+        nx.draw_networkx_labels(G, pos=xypos(G), labels=sig_res, font_size=fontsize*1.5, font_weight=fontweight)
 
         cb = plt.colorbar(edges)
         cb.set_label(label=r'Coupling Strength''\n''$kcal/mol/A^2$', weight=fontweight)
