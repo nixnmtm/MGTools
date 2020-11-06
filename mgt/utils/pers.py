@@ -10,6 +10,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mgt.utils.dist import CheckPersDist
 from mgt.extras import significant_residues
 from matplotlib.ticker import FixedLocator
+from natsort import natsorted
 
 
 class PersistenceUtils(object):
@@ -21,7 +22,7 @@ class PersistenceUtils(object):
 
     """
     def __init__(self, eigenval, pers, eigcut="outliers",
-                 pcut_range=np.arange(0.6, 0.91, 0.01),
+                 pcut_range=np.arange(0.5, 0.91, 0.01),
                  wt_cut_range=np.arange(0.01, 0.41, 0.01)):
         self.pers = pers
         self.eigenval = eigenval
@@ -48,16 +49,23 @@ class PersistenceUtils(object):
         return self.get_allpers_modes()[pcut]
 
     def get_eigval_outliers(self):
-        # get the point to draw cutoff outline
-        q3 = np.quantile(self.eigenval, 0.75)
-        max_whisker = q3 + (1.5 * scipy.stats.iqr(self.eigenval))  # Q3+1.5IQR
-        maxwhisk = self.eigenval[self.eigenval <= max_whisker].max()
-        if self.eigcut == "outliers":
-            mode_cut = (np.where(self.eigenval[self.eigenval > maxwhisk])[0] + 1).max()
-            return maxwhisk, mode_cut
-        if self.eigcut == "Q3":
-            mode_cut = (np.where(self.eigenval[self.eigenval > q3])[0] + 1).max()
-            return q3, mode_cut
+
+        if isinstance(self.eigcut, str):
+            # get the point to draw cutoff outline
+            q3 = np.quantile(self.eigenval, 0.75)
+            max_whisker = q3 + (1.5 * scipy.stats.iqr(self.eigenval))  # Q3+1.5IQR
+            maxwhisk = self.eigenval[self.eigenval <= max_whisker].max()
+            if self.eigcut == "outliers":
+                mode_cut = (np.where(self.eigenval[self.eigenval >= np.round(maxwhisk, 2)])[0] + 1).max()
+                return maxwhisk, mode_cut
+            if self.eigcut == "Q3":
+                mode_cut = (np.where(self.eigenval[self.eigenval >= np.round(q3, 2)])[0] + 1).max()
+                return q3, mode_cut
+        elif isinstance(self.eigcut, float) or isinstance(self.eigcut, int):
+            mode_cut = (np.where(self.eigenval[self.eigenval >= np.round(self.eigcut, 2)])[0] + 1).max()
+            return self.eigcut, mode_cut
+        else:
+            logging.error("Unknow variable datatype for 'eigcut'")
 
     def get_residues_persmodes(self, vec, resids):
         # populate dictionary with residues based on cutoffs
@@ -84,9 +92,7 @@ class PersistenceUtils(object):
     def generate_subplots(self, k, row_wise=False):
         nrow, ncol = self.choose_subplot_dimensions(k)
         # Choose your share X and share Y parameters as you wish:
-        figure, axes = plt.subplots(nrow, ncol,
-                                    sharex=False,
-                                    sharey=True,
+        figure, axes = plt.subplots(nrow, ncol, sharex="all", sharey="all",
                                     figsize=(ncol * 4, nrow * 3), squeeze=True)
 
         # Check if it's an array. If there's only one plot, it's just an Axes obj
@@ -95,7 +101,6 @@ class PersistenceUtils(object):
         else:
             # Choose the traversal you'd like: 'F' is col-wise, 'C' is row-wise
             axes = axes.flatten(order=('C' if row_wise else 'F'))
-
             # Delete any unused axes from the figure, so that they don't show
             # blank x- and y-axis lines
             for idx, ax in enumerate(axes[k:]):
@@ -105,7 +110,6 @@ class PersistenceUtils(object):
                 idx_to_turn_on_ticks = idx + k - ncol if row_wise else idx + k - 1
                 for tk in axes[idx_to_turn_on_ticks].get_xticklabels():
                     tk.set_visible(True)
-
             axes = axes[:k]
             return figure, axes
 
@@ -223,6 +227,16 @@ class PersistenceUtils(object):
             maxwhisk = self.eigenval[self.eigenval <= max_whisker].max()
 
             _q3 = self.eigenval[self.eigenval <= Q3].max()
+
+            if isinstance(self.eigcut, int) or isinstance(self.eigcut, float):
+                print(f"eigcut: {self.eigcut}")
+                ax_scat2.axvline(self.eigcut, color='r', linestyle='--')
+                axBox.axvline(self.eigcut, color='r', linestyle='--')
+                if annotate:
+                    for a in range(len(self.eigenval)):
+                        if self.pers[a] > pcut and self.eigenval[a] >= np.round(self.eigcut, 2):
+                            ax_scat2.annotate(str(a + 1), xy=(self.eigenval[a], self.pers[a]), fontsize=14)
+
             if self.eigcut == "outliers":
                 print(f"maxwhisk: {maxwhisk}")
                 ax_scat2.axvline(maxwhisk, color='r', linestyle='--')
@@ -230,7 +244,7 @@ class PersistenceUtils(object):
 
                 if annotate:
                     for a in range(len(self.eigenval)):
-                        if self.pers[a] > pcut and self.eigenval[a] > maxwhisk:
+                        if self.pers[a] > pcut and self.eigenval[a] >= np.round(maxwhisk, 2):
                             ax_scat2.annotate(str(a + 1), xy=(self.eigenval[a], self.pers[a]), fontsize=14)
 
                 # ev = np.asarray(self.eigenval)
@@ -245,7 +259,7 @@ class PersistenceUtils(object):
                 axBox.axvline(Q3, color='r', linestyle='--')
                 if annotate:
                     for a in range(len(self.eigenval)):
-                        if self.pers[a] > pcut and self.eigenval[a] > _q3:
+                        if self.pers[a] > pcut and self.eigenval[a] >= np.round(_q3, 2):
                             ax_scat2.annotate(str(a + 1), xy=(self.eigenval[a], self.pers[a]), fontsize=14)
         f2.tight_layout()
         if title:
@@ -256,11 +270,33 @@ class PersistenceUtils(object):
 
     def plot_persmodes(self, vec, allmodes, cdf_cut=0.90, wt_cut=0.15, pdbaa=None, resids=None, fontsize=12,
                        title="Persistent Eigenmodes", tick_rotation='horizontal',
-                       tickpositions=None, xticklabels=None, savepath=None):
+                       tickpositions=None, xticklabels=None, savepath=None, annotate_angle=90, idx_segvline=None):
+
+        """
+        Plots the persistent eigenmodes with significant residues annotated.
+
+
+        :param vec:
+        :param allmodes:
+        :param cdf_cut:
+        :param wt_cut:
+        :param pdbaa:
+        :param resids:
+        :param fontsize:
+        :param title:
+        :param tick_rotation:
+        :param tickpositions:
+        :param xticklabels:
+        :param savepath:
+        :param annotate_angle:
+        :param idx_segvline:  segment splitting vertical line index (eg:S1A: 224)
+        :return: plots persistent modes with residues annotated
+        """
+        print("RELOADED")
 
         legend_properties = {'family': 'Arial', 'weight': 'normal', 'size': fontsize-3}
-        font = {'family': 'Arial', 'weight': 'normal', 'size': fontsize+2}
-        font_ticks = {'family': 'Arial', 'weight': 'normal', 'size': fontsize}
+        font = {'family': 'Arial', 'weight': 'normal', 'size': fontsize}
+        font_ticks = {'family': 'Arial', 'weight': 'normal', 'size': fontsize-2}
 
         pcut, cdf_name = self.get_pcutoff(cdf_cut=cdf_cut)
         fig, axes = self.generate_subplots(len(allmodes[str(pcut)]), row_wise=True)
@@ -270,16 +306,16 @@ class PersistenceUtils(object):
             aa_residues = []
             cont_residues = []
             m = m - 1  # modes are exact indices
-            ax.plot(resids, vec[:, m] * vec[:, m], label=r'$\overline{\mathbf{\nu}}_{%s}$' % (m + 1))
-            ax.axhline(wt_cut, color='k', linestyle='--', linewidth=0.5)
+            ax.plot(resids, vec[:, m] * vec[:, m], label=f"{m + 1}")
+            ax.axhline(wt_cut, color='grey', linestyle='--', linewidth=0.75)
             for k, p, l in zip(resids, pdbaa, vec[:, m] * vec[:, m]):
                 if l > wt_cut:
-                    ax.annotate(str(p), xy=(k, l))
+                    ax.annotate(str(p), xy=(k, l), rotation=annotate_angle)
                     aa_residues.append(str(p))
                     cont_residues.append(str(k))
             print(f"Mode {m+1} : {aa_residues} <--> {cont_residues}  EigVal:{self.eigenval[m]}")
-            ax.set_xlabel("Residues", fontdict=font)
-            ax.set_ylabel(r'$|\overline{\mathbf{\nu}}_{\alpha}|$', fontdict=font)
+            #ax.set_xlabel("Residues", fontdict=font)
+            #ax.set_ylabel(r'$|\overline{\mathbf{\nu}}_{\alpha}|$', fontdict=font)
             ax.legend(loc='best', frameon=False, prop=legend_properties)
 
             if xticklabels is None:
@@ -289,20 +325,20 @@ class PersistenceUtils(object):
                 ax.set_xticklabels(xticklab, fontdict=font_ticks, rotation=tick_rotation)
             else:
                 try:
-                    xticklab = xticklabels
                     ax.get_xaxis().set_major_locator(FixedLocator(tickpositions))
-                    ax.set_xticklabels(xticklab, fontdict=font_ticks, rotation=tick_rotation)
+                    ax.set_xticklabels(xticklabels, fontdict=font_ticks, rotation=tick_rotation)
                 except IOError as e:
                     logging.error('Input arguments missing: %s', e)
 
             yticklab = [str(np.round(yindx, 2)) for yindx in np.arange(0.0, 1.0, 0.2)]
             yticks = [np.round(yindx, 2) for yindx in np.arange(0.0, 1.0, 0.2)]
             ax.set_yticks(yticks)
-
             ax.set_yticklabels(yticklab, fontdict=font_ticks)
-        fig.suptitle(title, fontsize=fontsize)
+            if idx_segvline is not None:
+                ax.axvline(idx_segvline, linestyle="--", color="grey", linewidth=0.75)  # hardcoded the last residue of S1A
+        #fig.suptitle(title, fontsize=fontsize)
         fig.tight_layout(rect=[0, 0.03, 1, 0.95])
         if savepath:
-            fig.savefig(savepath, dpi=300)
+            fig.savefig(savepath, dpi=600)
 
         plt.show()

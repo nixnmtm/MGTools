@@ -82,7 +82,7 @@ class BaseMG(object):
         self.table = table
         self.tot_nres = len(self.table.resI.unique())
         self.exclude_disul = kwargs.get('exclude_disul', True)
-        print(self.exclude_disul)
+        #print(self.exclude_disul)
 
     def splitSS(self, write: bool = False) -> dict:
         """
@@ -281,7 +281,7 @@ class BaseMG(object):
                 same = pd.concat([smtable[seg1][key], smtable[seg2][key]], axis=0)
                 inter = pd.concat([same, diff], axis=0)
                 if self._comp_resid(inter):
-                    logging.warning("resids overlap, refactoring resids")
+                    # logging.warning("resids overlap, refactoring resids")
                     inter = self._refactor_resid(inter)
                 smtable[self.interSegs][key] = inter
         return smtable

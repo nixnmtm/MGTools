@@ -17,7 +17,8 @@ setup(
                         "scipy",
                         "networkx",
                         "matplotlib",
-                        "seaborn"
+                        "seaborn",
+                        "natsort"
                    ],
 
 )

@@ -1,6 +1,7 @@
 import pandas as pd
 import logging
 import numpy as np
+from natsort import natsorted
 from mgt.base import BaseMG, LoadKbTable
 
 logging.basicConfig(level=logging.INFO)
@@ -13,7 +14,12 @@ class MGCore(BaseMG):
     """
     def __init__(self, table, **kwargs):
         super(MGCore, self).__init__(table, **kwargs)
-        self.segid = kwargs.get("segid")
+
+        self.interSegs = kwargs.get('interSegs', None)
+        if self.interSegs is not None:
+            self.segid = self.interSegs
+        else:
+            self.segid = kwargs.get("segid")
         self.sskey = kwargs.get("sskey")
 
     def get_sum_table(self):
@@ -29,7 +35,6 @@ class MGCore(BaseMG):
     def get_mean_table(self):
         """
         Get mean table of specific secondary structure and segid
-
         :return: Dataframe of mean table
         """
         return self.table_mean()[self.segid][self.sskey]
@@ -86,14 +91,14 @@ class MGCore(BaseMG):
         6  169.063123  364.543558  193.112981    2.314533    0.052921
         7    3.482413  193.112981  390.274191  192.792781    0.886016
         8    0.139217    2.314533  192.792781  390.518684  195.272153
-        9    0.007373    0.052921    0.886016  195.272153  196.218462
+        9    0.0073`73    0.052921    0.886016  195.272153  196.218462
 
         """
         if tab is None:
             tab = self.get_mean_table()
         if isinstance(tab, pd.Series) and isinstance(tab.index, pd.core.index.MultiIndex):
             tab = tab.reset_index()
-        if tab.groupby("resI").sum().shape[0] > 1:
+        if tab.groupby("resI").sum().shape[1] > 1:
             diag_val = tab.groupby("resI").sum().drop("resJ", axis=1).values.ravel()
         else:
             diag_val = tab.groupby("resI").sum().values.ravel()
@@ -101,6 +106,7 @@ class MGCore(BaseMG):
         ref_mat = rmat.values
         ref_mat[[np.arange(rmat.shape[0])] * 2] = diag_val
         mat = pd.DataFrame(ref_mat, index=rmat.index.values, columns=rmat.index.values)
+        mat = mat.reindex(natsorted(mat.index.values)).T.reindex(natsorted(mat.index.values))
         return mat
 
     def eigh_decom(self, kmat=None):
@@ -158,7 +164,7 @@ class MGCore(BaseMG):
             t_mat[i, :, :] = time_mat
         return t_mat, t_val, t_vec
 
-    def evec_dotpdts(self):
+    def evec_dotpdts(self, kmat=None):
         """
         Evaluate dot products between eigen vectors of decomposed mean mgt matrix and each window mgt matrix
 
@@ -176,7 +182,7 @@ class MGCore(BaseMG):
         logging.info("This may take some time based on the number of windows analyzed")
         tmat, tval, tvec = self.windows_eigen_decom()
         logging.info("Windows decomposition completed")
-        meval, mevec = self.eigh_decom()
+        meval, mevec = self.eigh_decom(kmat=kmat)
         logging.info("Decomposition of Mean MGT matrix done")
         dps = np.zeros(tvec.shape)
         for t in range(tvec.shape[0]):
@@ -184,7 +190,7 @@ class MGCore(BaseMG):
         logging.info("Dot products of eigenmodes done")
         return dps
 
-    def calc_persistence(self, dot_mat=None):
+    def calc_persistence(self, dot_mat=None, kmat=None):
         """
         Calculate Persistence of eigenmodes
 
@@ -194,7 +200,7 @@ class MGCore(BaseMG):
         """
 
         if dot_mat is None:
-            dot_mat = self.evec_dotpdts()
+            dot_mat = self.evec_dotpdts(kmat=kmat)
         mpers = []
         logging.info("Calculating Persistence")
         for m in range(dot_mat.shape[1]):
