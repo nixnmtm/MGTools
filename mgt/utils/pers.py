@@ -275,7 +275,6 @@ class PersistenceUtils(object):
         """
         Plots the persistent eigenmodes with significant residues annotated.
 
-
         :param vec:
         :param allmodes:
         :param cdf_cut:
@@ -291,6 +290,7 @@ class PersistenceUtils(object):
         :param annotate_angle:
         :param idx_segvline:  segment splitting vertical line index (eg:S1A: 224)
         :return: plots persistent modes with residues annotated
+
         """
         print("RELOADED")
 
@@ -313,7 +313,7 @@ class PersistenceUtils(object):
                     ax.annotate(str(p), xy=(k, l), rotation=annotate_angle)
                     aa_residues.append(str(p))
                     cont_residues.append(str(k))
-            print(f"Mode {m+1} : {aa_residues} <--> {cont_residues}  EigVal:{self.eigenval[m]}")
+            print(f"Mode {m+1} : {aa_residues} <--> {cont_residues}  EigVal:{np.round(self.eigenval[m],2)}")
             #ax.set_xlabel("Residues", fontdict=font)
             #ax.set_ylabel(r'$|\overline{\mathbf{\nu}}_{\alpha}|$', fontdict=font)
             ax.legend(loc='best', frameon=False, prop=legend_properties)
