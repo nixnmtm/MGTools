@@ -3,13 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Molecular Graph Theory's documentation!
+Welcome to Rigidity Grpahs's documentation!
 ==================================================
 
-In molecular graph theory, edges that connect the nodes of amino acid residues are calculated from atomic fluctuations
+In rigidity graph, edges that connect the nodes of amino acid residues are calculated from atomic fluctuations
 (obtained from fluctuation matching).
 The adjacency matrix (A) and the degree matrix (D) of the weighted graph are also defined based on the calculated edges.
-The molecular graph was then characterized by analyzing the unoriented Laplacian matrix, (K=A+D).
+The molecular graph was then characterized by analyzing the signless Laplacian matrix, (K=A+D).
 We showed that this framework can be used to effectively dissect the inter-reside couplings due to backbone-backbone,
 backbone-sidechain, and sidechain-sidechain interactions, hence revealing the mechanical architecture of a protein structure.
 We also analyze the functional implications of the MGT in extracting allosteric communication and functionally important residues in proteins.

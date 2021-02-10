@@ -9,7 +9,7 @@ setup(
     license='Biosimulation Lab NCTU',
     author='Nixon Raj',
     author_email='nixnmtm@gmail.com',
-    description='Molecular Graph Theory',
+    description='Rigidity Graph',
 
     install_requires=[
                         "numpy",

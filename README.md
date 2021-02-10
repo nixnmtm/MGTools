@@ -1,15 +1,15 @@
-# Molecular Graph Theory
+# Rigidity Graph
 
-*This projects aims to depict the behaviour of molecules like proteins and nucleic acids*
+*This projects aims to depict the chemically spcific behaviour of molecules like proteins and nucleic acids*
 
-In molecular graph theory, edges that connect the nodes of amino acid residues are calculated 
-from atomic fluctuations. The adjacency matrix (A) and the degree matrix (D) of the weighted 
-graph are also defined based on the calculated edges. The molecular graph was then characterized 
-by analyzing the unoriented Laplacian matrix, $(K=A+D)$. We showed that this framework 
-can be used to effectively dissect the inter-reside couplings due to backbone-backbone, 
-backbone-sidechain, and sidechain-sidechain interactions, hence revealing the mechanical 
-architecture of a protein structure. We also analyze the functional implications of the MGT 
-in extracting allosteric communication and functionally important residues in proteins.
+The inter-residue rigidity graphs are the *K* matrices of the edge weights between residues *I* and *J*, 
+which is the sum over the bsENM spring constants that link their CG sites. This construction renders a 
+signless Laplacian matrix.  Since bsENM springs can be categorized according to the CG site types as backbone-backbone, 
+backbone-side-chain, or side-chain-side-chain, *K^BB*,*K^BS* and *K^SS* are constructed accordingly. Averaging over the 
+rigidity graphs of trajectory segments gives the mean graph *K*, and the following analysis for its 
+eigenvalues and eigenvectors is conducted to identify the statistically prominent (strong and persistent) modes during 
+protein dynamics. Then by comparing the prominent modes of apo and holo rigidity graphs, allosteric responses even 
+without conformational changes can be elucidated. 
 
 
 ### Dependencies

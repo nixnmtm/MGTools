@@ -13,8 +13,8 @@ sys.path.insert(0, os.path.abspath('../mgt/'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Molecular Graph Theory'
-copyright = u'2019, Nixon Raj, nix02g@nctu.edu.tw'
+project = 'Rigidity Graph'
+copyright = u'2019, Nixon Raj, nix02g@nctu.edu.tw, nixnmtm@gmail.com'
 author = 'Nixon Raj'
 
 # The full version, including alpha/beta/rc tags

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="English">
   <head>
     <meta charset="utf-8" />
-    <title>Core Modules of MGT &#8212; Molecular Graph Theory v3.0 documentation</title>
+    <title>Core Modules of MGT (Rigidity Graph) &#8212; Rigidity Graph v3.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -16,7 +16,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Tools used in MGT Analysis" href="utils.html" />
-    <link rel="prev" title="Welcome to Molecular Graph Theory&#39;s documentation!" href="index.html" />
+    <link rel="prev" title="Welcome to Rigidity Grpahs&#39;s documentation!" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -33,12 +33,12 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="core-modules-of-mgt">
-<h1>Core Modules of MGT<a class="headerlink" href="#core-modules-of-mgt" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="core-modules-of-mgt-rigidity-graph">
+<h1>Core Modules of MGT (Rigidity Graph)<a class="headerlink" href="#core-modules-of-mgt-rigidity-graph" title="Permalink to this headline">¶</a></h1>
 <dl class="simple">
 <dt><a class="reference internal" href="#module-core" title="core"><code class="xref py py-mod docutils literal notranslate"><span class="pre">core</span></code></a> module consists of:</dt><dd><ol class="arabic simple">
 <li><p>The base <code class="xref py py-class docutils literal notranslate"><span class="pre">core.BaseMG</span></code> that preprocess the fluctuogram data.</p></li>
-<li><p>The core <code class="xref py py-class docutils literal notranslate"><span class="pre">core.CoreMG</span></code> that builds the molecular graph matrix and decompose it.</p></li>
+<li><p>The core <code class="xref py py-class docutils literal notranslate"><span class="pre">core.CoreMG</span></code> that builds the rigidity graph matrix and decompose it.</p></li>
 </ol>
 </dd>
 </dl>
@@ -51,7 +51,7 @@ overlap, the residue ids are renamed using <code class="xref py py-func docutils
 <p>Core Class for The Molecular Graph Theory Analysis</p>
 <dl class="method">
 <dt id="core.MGCore.calc_persistence">
-<code class="sig-name descname">calc_persistence</code><span class="sig-paren">(</span><em class="sig-param">dot_mat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.calc_persistence" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">calc_persistence</code><span class="sig-paren">(</span><em class="sig-param">dot_mat=None</em>, <em class="sig-param">kmat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.calc_persistence" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate Persistence of eigenmodes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -93,7 +93,7 @@ so that the mean of its components is non-negative.</p>
 
 <dl class="method">
 <dt id="core.MGCore.evec_dotpdts">
-<code class="sig-name descname">evec_dotpdts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.evec_dotpdts" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">evec_dotpdts</code><span class="sig-paren">(</span><em class="sig-param">kmat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.evec_dotpdts" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluate dot products between eigen vectors of decomposed mean mgt matrix and each window mgt matrix</p>
 <div class="math notranslate nohighlight">
 \[\mathbf{M_{ij} = {U^r_i \cdot U^w_j}}\]</div>
@@ -102,25 +102,20 @@ so that the mean of its components is non-negative.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="core.MGCore.get_intraseg_df">
+<em class="property">static </em><code class="sig-name descname">get_intraseg_df</code><span class="sig-paren">(</span><em class="sig-param">table</em>, <em class="sig-param">segid</em><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.get_intraseg_df" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="core.MGCore.get_mean_table">
 <code class="sig-name descname">get_mean_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.get_mean_table" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get mean table of specific secondary structure and segid</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>segid</strong> -- segid</p></li>
-<li><p><strong>sskey</strong> -- secondary structure key</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Dataframe of mean table</p>
-</dd>
-</dl>
+<dd><p>Get mean table of specific secondary structure and segid
+:return: Dataframe of mean table</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="core.MGCore.get_nres_seg">
-<code class="sig-name descname">get_nres_seg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.get_nres_seg" title="Permalink to this definition">¶</a></dt>
+<dt id="core.MGCore.get_resids">
+<code class="sig-name descname">get_resids</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.get_resids" title="Permalink to this definition">¶</a></dt>
 <dd><p>Ger number of residues in a segment
 :return:</p>
 </dd></dl>
@@ -138,6 +133,17 @@ so that the mean of its components is non-negative.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>Dataframe of sum table</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.MGCore.get_table">
+<code class="sig-name descname">get_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.get_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get table based on sskey and segid</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Dataframe</p>
 </dd>
 </dl>
 </dd></dl>
@@ -166,7 +172,7 @@ so that the mean of its components is non-negative.</p>
 <span class="go">6  169.063123  364.543558  193.112981    2.314533    0.052921</span>
 <span class="go">7    3.482413  193.112981  390.274191  192.792781    0.886016</span>
 <span class="go">8    0.139217    2.314533  192.792781  390.518684  195.272153</span>
-<span class="go">9    0.007373    0.052921    0.886016  195.272153  196.218462</span>
+<span class="go">9    0.0073`73    0.052921    0.886016  195.272153  196.218462</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -190,7 +196,7 @@ so that the mean of its components is non-negative.</p>
 
 <dl class="method">
 <dt id="core.MGCore.splitSS">
-<code class="sig-name descname">splitSS</code><span class="sig-paren">(</span><em class="sig-param">write: bool = False</em>, <em class="sig-param">exclude_disul: bool = True</em><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#core.MGCore.splitSS" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">splitSS</code><span class="sig-paren">(</span><em class="sig-param">write: bool = False</em><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#core.MGCore.splitSS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Split based on secondary structures.</p>
 <div class="line-block">
 <div class="line">BB - Backbone-Backbone Interactions</div>
@@ -217,11 +223,6 @@ so that the mean of its components is non-negative.</p>
 </ol>
 </div>
 </dd></dl>
-
-<dl class="method">
-<dt id="core.MGCore.table_intraseg">
-<code class="sig-name descname">table_intraseg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#core.MGCore.table_intraseg" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="method">
 <dt id="core.MGCore.table_mean">
@@ -269,7 +270,7 @@ so that the mean of its components is non-negative.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">Molecular Graph Theory</a></h1>
+<h1 class="logo"><a href="index.html">Rigidity Graph</a></h1>
 
 
 
@@ -281,7 +282,7 @@ so that the mean of its components is non-negative.</p>
 <h3>Navigation</h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Core Modules of MGT</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Core Modules of MGT (Rigidity Graph)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">Tools used in MGT Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="network_utils.html">Network tools used in MGT</a></li>
 </ul>
@@ -290,7 +291,7 @@ so that the mean of its components is non-negative.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Welcome to Molecular Graph Theory's documentation!</a></li>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to Rigidity Grpahs's documentation!</a></li>
       <li>Next: <a href="utils.html" title="next chapter">Tools used in MGT Analysis</a></li>
   </ul></li>
 </ul>
@@ -318,7 +319,7 @@ so that the mean of its components is non-negative.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, Nixon Raj, nix02g@nctu.edu.tw.
+      &copy;2019, Nixon Raj, nix02g@nctu.edu.tw, nixnmtm@gmail.com.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
